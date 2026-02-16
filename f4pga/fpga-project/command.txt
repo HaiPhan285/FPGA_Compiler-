@@ -1,0 +1,63 @@
+# FPGA Build & Program Commands
+# For Nexys A7-100T (XC7A100T-CSG324)
+
+# ============================================================
+# TOOLCHAIN EXPLANATION
+# ============================================================
+
+# The open-source FPGA toolchain consists of:
+#
+# 1. YOSYS - Synthesis
+#    https://github.com/YosysHQ/yosys
+#    Converts Verilog/VHDL code into a gate-level netlist.
+#    Maps your design to FPGA primitives (LUTs, FFs, etc.)
+#
+# 2. NEXTPNR - Place & Route
+#    https://github.com/YosysHQ/nextpnr
+#    Places your design elements on the FPGA and routes connections.
+#    The "chipdb" contains information about the FPGA architecture.
+#
+# 3. PRJXRAY - Bitstream Generation
+#    https://github.com/f4pga/prjxray
+#    Converts the design into a programming bitstream.
+#    Tools: fasm2frames, xc7frames2bit
+#
+# 4. OPENFPGALOADER - Programming
+#    https://github.com/OpenFPGA/openFPGALoader
+#    Opensource JTAG programmer. Works with many FPGA boards.
+
+# ============================================================
+# VSCODE SHORTCUTS (Ctrl+Shift+P)
+# ============================================================
+
+# Run Task: FPGA: Build
+# Run Task: FPGA: Program  
+# Run Task: FPGA: Build & Program
+# Run Task: FPGA: Clean
+
+# ============================================================
+# OR USE TERMINAL
+# ============================================================
+
+# Build
+source /home/hai/f4pga/prjxray-env.sh
+cd /home/hai/f4pga/fpga-project
+./build.sh
+
+# Program (after USB attached in Windows: usbipd attach --wsl --busid 1-2)
+openFPGALoader -b nexys_a7_100 test.bit
+
+# ============================================================
+# FILES
+# ============================================================
+
+# test.sv          - Your Verilog/SystemVerilog design
+# constraints.xdc  - Pin constraints and IO standards
+# build.sh         - Build script
+# test.bit         - Compiled bitstream
+# build/           - Build output
+
+
+// powershell (as Admin)
+usbipd attach --wsl --busid 1-2
+openFPGALoader -b nexys_a7_100 test.bit

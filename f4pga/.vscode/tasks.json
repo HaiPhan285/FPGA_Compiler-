@@ -1,0 +1,36 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "FPGA: Build",
+            "type": "shell",
+            "command": "source /home/hai/f4pga/prjxray-env.sh && cd /home/hai/f4pga/fpga-project && ./build.sh",
+            "problemMatcher": [],
+            "group": "build",
+            "detail": "Build FPGA bitstream"
+        },
+        {
+            "label": "FPGA: Program",
+            "type": "shell",
+            "command": "cd /home/hai/f4pga/fpga-project && openFPGALoader -b nexys_a7_100 test.bit",
+            "problemMatcher": [],
+            "group": "build",
+            "detail": "Program FPGA via JTAG"
+        },
+        {
+            "label": "FPGA: Build & Program",
+            "type": "shell",
+            "command": "source /home/hai/f4pga/prjxray-env.sh && cd /home/hai/f4pga/fpga-project && ./build.sh && openFPGALoader -b nexys_a7_100 test.bit",
+            "problemMatcher": [],
+            "group": "build",
+            "detail": "Build and program FPGA"
+        },
+        {
+            "label": "FPGA: Clean",
+            "type": "shell",
+            "command": "rm -rf /home/hai/f4pga/fpga-project/build/*",
+            "problemMatcher": [],
+            "detail": "Clean build directory"
+        }
+    ]
+}

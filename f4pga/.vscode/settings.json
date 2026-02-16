@@ -1,0 +1,10 @@
+{
+    "cmake.sourceDirectory": "/home/hai/f4pga/f4pga-arch-defs",
+    "files.associations": {
+        "*.sv": "systemverilog",
+        "*.v": "verilog",
+        "*.vh": "systemverilog"
+    },
+    "verilog.linting.linter": "none",
+    "terminal.integrated.defaultProfile.linux": "bash"
+}
