@@ -22,6 +22,8 @@ CONSTRAINTS=""
 BUILD_DIR="build"
 SOURCE_DIR="."
 SV_FILE=""
+BUILD_ALL=false
+FLASH_MODE=false
 
 # Colors for output
 RED='\033[0;31m'
@@ -52,6 +54,14 @@ while [[ $# -gt 0 ]]; do
             SV_FILE="$2"
             shift 2
             ;;
+        --all)
+            BUILD_ALL=true
+            shift
+            ;;
+        --flash)
+            FLASH_MODE=true
+            shift
+            ;;
         --help)
             echo "Usage: ./build.sh [OPTIONS]"
             echo ""
@@ -61,14 +71,13 @@ while [[ $# -gt 0 ]]; do
             echo "  --project <name>    Project name for output bitstream (default: test)"
             echo "  --source-dir <dir>  Directory containing .sv files (default: current directory)"
             echo "  --sv-file <file>    Specific .sv file to build (default: all .sv files)"
+            echo "  --all               Build all projects found in app/ directory"
+            echo "  --flash             Select and flash a built project to the FPGA"
             echo "  --help              Show this help"
             echo ""
             echo "Examples:"
-            echo "  ./build.sh                                    # Build test.sv with test.xdc"
-            echo "  ./build.sh --top main                         # Build all .sv files, top=main"
-            echo "  ./build.sh --project myapp --top top_module   # Build myapp.bit with top_module"
-            echo "  ./build.sh --source-dir app --top main        # Build from app/ directory"
-            echo "  ./build.sh --sv-file test.sv --top test       # Build only test.sv"
+            echo "  ./build.sh --all                              # Build all projects in app/"
+            echo "  ./build.sh --flash                            # Pick a project to flash"
             exit 0
             ;;
         *)
@@ -78,6 +87,98 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+# Build all projects in app/ directory
+if [ "$BUILD_ALL" = true ]; then
+    APP_DIR="${SCRIPT_DIR}/app"
+    if [ ! -d "$APP_DIR" ]; then
+        echo -e "${RED}Error: No app/ directory found at ${APP_DIR}${NC}"
+        exit 1
+    fi
+    FAILED=()
+    for proj_dir in "$APP_DIR"/*/; do
+        proj_name=$(basename "$proj_dir")
+        echo -e "${GREEN}=== Building project: ${proj_name} ===${NC}"
+
+        # Auto-detect top module: first .sv or .v file that isn't test.sv
+        detected_top=""
+        for f in "$proj_dir"*.sv "$proj_dir"*.v; do
+            [ -f "$f" ] || continue
+            base=$(basename "$f" .sv); base=$(basename "$base" .v)
+            [[ "$base" == "test" ]] && continue
+            detected_top="$base"
+            break
+        done
+        if [ -z "$detected_top" ]; then
+            echo -e "${RED}  Skipping ${proj_name}: no .sv/.v source found${NC}"
+            FAILED+=("$proj_name")
+            continue
+        fi
+
+        # Auto-detect constraints: prefer <top>.xdc, else first .xdc found
+        detected_xdc=""
+        if [ -f "${proj_dir}${detected_top}.xdc" ]; then
+            detected_xdc="${detected_top}.xdc"
+        else
+            detected_xdc=$(ls "$proj_dir"*.xdc 2>/dev/null | head -1 | xargs basename 2>/dev/null)
+        fi
+        if [ -z "$detected_xdc" ]; then
+            echo -e "${RED}  Skipping ${proj_name}: no .xdc constraints found${NC}"
+            FAILED+=("$proj_name")
+            continue
+        fi
+
+        echo "  Top module : $detected_top"
+        echo "  Constraints: $detected_xdc"
+
+        if "$SCRIPT_DIR/build.sh" \
+            --source-dir "$proj_dir" \
+            --top "$detected_top" \
+            --constraints "$detected_xdc" \
+            --project "$proj_name"; then
+            echo -e "${GREEN}  ✓ ${proj_name} built successfully${NC}"
+        else
+            echo -e "${RED}  ✗ ${proj_name} build FAILED${NC}"
+            FAILED+=("$proj_name")
+        fi
+        echo ""
+    done
+
+    echo -e "${GREEN}=== All-project build complete ===${NC}"
+    if [ ${#FAILED[@]} -gt 0 ]; then
+        echo -e "${RED}Failed projects: ${FAILED[*]}${NC}"
+        exit 1
+    fi
+    exit 0
+fi
+
+# Interactive flash: pick a built project and program it to the FPGA
+if [ "$FLASH_MODE" = true ]; then
+    APP_DIR="${SCRIPT_DIR}/app"
+    mapfile -t BITS < <(find "$APP_DIR" -name "*.bit" | sort)
+    if [ ${#BITS[@]} -eq 0 ]; then
+        echo -e "${RED}No built .bit files found. Run ./build.sh --all first.${NC}"
+        exit 1
+    fi
+
+    echo -e "${GREEN}=== Select a project to flash ===${NC}"
+    for i in "${!BITS[@]}"; do
+        proj=$(basename "$(dirname "${BITS[$i]}")")
+        bit=$(basename "${BITS[$i]}")
+        echo "  [$((i+1))] $proj  ($bit)"
+    done
+    echo ""
+    read -rp "Enter number: " CHOICE
+    if ! [[ "$CHOICE" =~ ^[0-9]+$ ]] || [ "$CHOICE" -lt 1 ] || [ "$CHOICE" -gt ${#BITS[@]} ]; then
+        echo -e "${RED}Invalid selection.${NC}"
+        exit 1
+    fi
+
+    SELECTED="${BITS[$((CHOICE-1))]}"
+    echo -e "${GREEN}Flashing: ${SELECTED}${NC}"
+    openFPGALoader -b nexys_a7_100 "$SELECTED"
+    exit 0
+fi
 
 # Auto-detect top module if not specified
 if [ -z "$TOP" ]; then

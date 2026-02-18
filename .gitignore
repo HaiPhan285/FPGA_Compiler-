@@ -1,0 +1,6 @@
+# FPGA build artifacts
+app/**/build/
+app/**/*.bit
+app/**/*.fasm
+app/**/*.frames
+app/**/*.json
