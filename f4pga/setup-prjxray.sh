@@ -5,14 +5,17 @@ set -e
 
 echo "=== Setting up prjxray for Nexys A7-100T ==="
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Check if prjxray already exists
-if [ -d "/home/hai/f4pga/prjxray" ]; then
+if [ -d "${SCRIPT_DIR}/prjxray" ]; then
     echo "prjxray directory already exists. Updating..."
-    cd /home/hai/f4pga/prjxray
+    cd "${SCRIPT_DIR}/prjxray"
     git pull
 else
     echo "Cloning prjxray repository..."
-    cd /home/hai/f4pga
+    cd "${SCRIPT_DIR}"
     git clone https://github.com/f4pga/prjxray.git
     cd prjxray
 fi
@@ -69,7 +72,7 @@ echo ""
 echo "=== Setup complete! ==="
 echo ""
 echo "To use prjxray tools, run:"
-echo "  source /home/hai/f4pga/prjxray/utils/environment.sh"
+echo "  source ${SCRIPT_DIR}/prjxray-env.sh"
 echo ""
 echo "Or add this line to your ~/.bashrc:"
-echo "  source /home/hai/f4pga/prjxray/utils/environment.sh"
+echo "  source ${SCRIPT_DIR}/prjxray-env.sh"

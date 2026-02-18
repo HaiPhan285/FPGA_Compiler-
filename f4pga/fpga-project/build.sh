@@ -4,10 +4,14 @@
 set -e
 
 # Source prjxray environment
-if [ -f "/home/hai/f4pga/prjxray-env.sh" ]; then
-    source /home/hai/f4pga/prjxray-env.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PRJXRAY_ENV="${SCRIPT_DIR}/../prjxray-env.sh"
+
+if [ -f "$PRJXRAY_ENV" ]; then
+    source "$PRJXRAY_ENV"
 else
-    echo "Error: prjxray environment not found. Please run setup first."
+    echo "Error: prjxray environment not found at $PRJXRAY_ENV"
+    echo "Please run setup first: ./setup-prjxray.sh"
     exit 1
 fi
 
@@ -140,20 +144,29 @@ rm -rf ${BUILD_DIR}
 rm -f ${PROJECT}.bit
 mkdir -p ${BUILD_DIR}
 
-# Find all .sv files
+# Find all .sv and .v files
 SV_FILES=$(ls -1 *.sv 2>/dev/null | tr '\n' ' ')
-if [ -z "$SV_FILES" ]; then
-    echo -e "${RED}Error: No .sv files found in current directory.${NC}"
+V_FILES=$(ls -1 *.v 2>/dev/null | tr '\n' ' ')
+ALL_FILES="${SV_FILES}${V_FILES}"
+if [ -z "$ALL_FILES" ]; then
+    echo -e "${RED}Error: No .sv or .v files found in current directory.${NC}"
     exit 1
 fi
 
-echo "Found SystemVerilog files: $SV_FILES"
+echo "Found Verilog files: ${SV_FILES}${V_FILES}"
 echo ""
 
 echo -e "${YELLOW}Step 1: Synthesis with Yosys${NC}"
 
-# Build yosys command to read all .sv files
-YOSYS_CMD="read_verilog -sv ${SV_FILES}; hierarchy -check -top ${TOP}; synth_xilinx -family xc7 -top ${TOP}; write_json ${BUILD_DIR}/${PROJECT}.json"
+# Build yosys command to read all .sv and .v files
+YOSYS_CMD=""
+if [ -n "$SV_FILES" ]; then
+    YOSYS_CMD="${YOSYS_CMD}read_verilog -sv ${SV_FILES}; "
+fi
+if [ -n "$V_FILES" ]; then
+    YOSYS_CMD="${YOSYS_CMD}read_verilog ${V_FILES}; "
+fi
+YOSYS_CMD="${YOSYS_CMD}hierarchy -check -top ${TOP}; synth_xilinx -family xc7 -top ${TOP}; write_json ${BUILD_DIR}/${PROJECT}.json"
 
 yosys -p "${YOSYS_CMD}" 2>&1 | tee ${BUILD_DIR}/yosys.log
 

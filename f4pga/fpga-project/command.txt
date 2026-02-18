@@ -61,3 +61,4 @@ openFPGALoader -b nexys_a7_100 test.bit
 // powershell (as Admin)
 usbipd attach --wsl --busid 1-2
 openFPGALoader -b nexys_a7_100 test.bit
+./build.sh --source-dir app/project1  --top main  --project run --constraints main.xdc
