@@ -45,7 +45,9 @@ cd /home/hai/f4pga/fpga-project
 ./build.sh
 
 # Program (after USB attached in Windows: usbipd attach --wsl --busid 1-2)
-openFPGALoader -b nexys_a7_100 test.bit
+# 5. Program FPGA (Run this after build)
+# Note: Ensure USB is attached (WSL users: run 'usbipd attach' in PowerShell first)
+openFPGALoader -b nexys_a7_100 run.bit
 
 # ============================================================
 # FILES
@@ -57,8 +59,15 @@ openFPGALoader -b nexys_a7_100 test.bit
 # test.bit         - Compiled bitstream
 # build/           - Build output
 
+when it run make sure to have all the thing
+yosys
+nextpnr
+
 
 // powershell (as Admin)
 usbipd attach --wsl --busid 1-2
-openFPGALoader -b nexys_a7_100 test.bit
+
+to run and implement the generate bitstream
 ./build.sh --source-dir app/project1  --top main  --project run --constraints main.xdc
+openFPGALoader -b nexys_a7_100 run.bit
+

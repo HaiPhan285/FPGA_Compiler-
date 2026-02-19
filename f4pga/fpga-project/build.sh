@@ -4,8 +4,8 @@
 set -e
 
 # Source prjxray environment
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PRJXRAY_ENV="${SCRIPT_DIR}/../prjxray-env.sh"
+BUILD_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PRJXRAY_ENV="${BUILD_SCRIPT_DIR}/../prjxray-env.sh"
 
 if [ -f "$PRJXRAY_ENV" ]; then
     source "$PRJXRAY_ENV"
@@ -24,6 +24,56 @@ SOURCE_DIR="."
 SV_FILE=""
 BUILD_ALL=false
 FLASH_MODE=false
+
+# If no arguments given, show interactive project selection menu
+if [[ $# -eq 0 ]]; then
+    APP_DIR="${BUILD_SCRIPT_DIR}/app"
+    mapfile -t PROJECTS < <(find "$APP_DIR" -mindepth 1 -maxdepth 1 -type d | sort)
+    if [ ${#PROJECTS[@]} -eq 0 ]; then
+        echo "No projects found in app/"
+        exit 1
+    fi
+
+    # Pick project
+    echo "=== Select a project ==="
+    for i in "${!PROJECTS[@]}"; do
+        echo "  [$((i+1))] $(basename "${PROJECTS[$i]}")"
+    done
+    echo "  [a] Build all"
+    echo ""
+    read -rp "Enter number: " CHOICE
+    if [[ "$CHOICE" == "a" ]]; then
+        BUILD_ALL=true
+    elif [[ "$CHOICE" =~ ^[0-9]+$ ]] && [ "$CHOICE" -ge 1 ] && [ "$CHOICE" -le ${#PROJECTS[@]} ]; then
+        SELECTED_DIR="${PROJECTS[$((CHOICE-1))]}"
+        SOURCE_DIR="$SELECTED_DIR"
+        PROJECT=$(basename "$SELECTED_DIR")
+
+        # Auto-detect top module (first .sv/.v that isn't test)
+        for f in "$SELECTED_DIR"*.sv "$SELECTED_DIR"*.v; do
+            [ -f "$f" ] || continue
+            base=$(basename "$f" .sv); base=$(basename "$base" .v)
+            [[ "$base" == "test" ]] && continue
+            TOP="$base"; break
+        done
+        if [ -z "$TOP" ]; then echo "No .sv/.v files found in $PROJECT"; exit 1; fi
+
+        # Auto-detect constraints (matching name or first .xdc)
+        if [ -f "${SELECTED_DIR}${TOP}.xdc" ]; then
+            CONSTRAINTS="${TOP}.xdc"
+        else
+            CONSTRAINTS=$(find "$SELECTED_DIR" -maxdepth 1 -name "*.xdc" | sort | head -1 | xargs basename 2>/dev/null)
+        fi
+        if [ -z "$CONSTRAINTS" ]; then echo "No .xdc file found in $PROJECT"; exit 1; fi
+
+        echo ""
+        echo "  Design file : ${TOP}.sv / ${TOP}.v"
+        echo "  Constraints : ${CONSTRAINTS}"
+    else
+        echo "Invalid selection."
+        exit 1
+    fi
+fi
 
 # Colors for output
 RED='\033[0;31m'
@@ -90,7 +140,7 @@ done
 
 # Build all projects in app/ directory
 if [ "$BUILD_ALL" = true ]; then
-    APP_DIR="${SCRIPT_DIR}/app"
+    APP_DIR="${BUILD_SCRIPT_DIR}/app"
     if [ ! -d "$APP_DIR" ]; then
         echo -e "${RED}Error: No app/ directory found at ${APP_DIR}${NC}"
         exit 1
@@ -98,40 +148,51 @@ if [ "$BUILD_ALL" = true ]; then
     FAILED=()
     for proj_dir in "$APP_DIR"/*/; do
         proj_name=$(basename "$proj_dir")
-        echo -e "${GREEN}=== Building project: ${proj_name} ===${NC}"
+        echo -e "${GREEN}=== Project: ${proj_name} ===${NC}"
 
-        # Auto-detect top module: first .sv or .v file that isn't test.sv
-        detected_top=""
-        for f in "$proj_dir"*.sv "$proj_dir"*.v; do
-            [ -f "$f" ] || continue
-            base=$(basename "$f" .sv); base=$(basename "$base" .v)
-            [[ "$base" == "test" ]] && continue
-            detected_top="$base"
-            break
-        done
-        if [ -z "$detected_top" ]; then
+        # Pick source file
+        mapfile -t SRC_FILES < <(find "$proj_dir" -maxdepth 1 \( -name "*.sv" -o -name "*.v" \) | sort)
+        if [ ${#SRC_FILES[@]} -eq 0 ]; then
             echo -e "${RED}  Skipping ${proj_name}: no .sv/.v source found${NC}"
             FAILED+=("$proj_name")
             continue
         fi
-
-        # Auto-detect constraints: prefer <top>.xdc, else first .xdc found
-        detected_xdc=""
-        if [ -f "${proj_dir}${detected_top}.xdc" ]; then
-            detected_xdc="${detected_top}.xdc"
-        else
-            detected_xdc=$(ls "$proj_dir"*.xdc 2>/dev/null | head -1 | xargs basename 2>/dev/null)
+        echo "  Select design file:"
+        for i in "${!SRC_FILES[@]}"; do
+            echo "    [$((i+1))] $(basename "${SRC_FILES[$i]}")"
+        done
+        read -rp "  Enter number: " SRC_CHOICE
+        if ! [[ "$SRC_CHOICE" =~ ^[0-9]+$ ]] || [ "$SRC_CHOICE" -lt 1 ] || [ "$SRC_CHOICE" -gt ${#SRC_FILES[@]} ]; then
+            echo -e "${RED}  Invalid selection, skipping ${proj_name}${NC}"
+            FAILED+=("$proj_name")
+            continue
         fi
-        if [ -z "$detected_xdc" ]; then
+        SELECTED_SRC="${SRC_FILES[$((SRC_CHOICE-1))]}"
+        detected_top=$(basename "$SELECTED_SRC" .sv); detected_top=$(basename "$detected_top" .v)
+
+        # Pick constraints file
+        mapfile -t XDC_FILES < <(find "$proj_dir" -maxdepth 1 -name "*.xdc" | sort)
+        if [ ${#XDC_FILES[@]} -eq 0 ]; then
             echo -e "${RED}  Skipping ${proj_name}: no .xdc constraints found${NC}"
             FAILED+=("$proj_name")
             continue
         fi
+        echo "  Select constraints file:"
+        for i in "${!XDC_FILES[@]}"; do
+            echo "    [$((i+1))] $(basename "${XDC_FILES[$i]}")"
+        done
+        read -rp "  Enter number: " XDC_CHOICE
+        if ! [[ "$XDC_CHOICE" =~ ^[0-9]+$ ]] || [ "$XDC_CHOICE" -lt 1 ] || [ "$XDC_CHOICE" -gt ${#XDC_FILES[@]} ]; then
+            echo -e "${RED}  Invalid selection, skipping ${proj_name}${NC}"
+            FAILED+=("$proj_name")
+            continue
+        fi
+        detected_xdc=$(basename "${XDC_FILES[$((XDC_CHOICE-1))]}")
 
         echo "  Top module : $detected_top"
         echo "  Constraints: $detected_xdc"
 
-        if "$SCRIPT_DIR/build.sh" \
+        if "$BUILD_SCRIPT_DIR/build.sh" \
             --source-dir "$proj_dir" \
             --top "$detected_top" \
             --constraints "$detected_xdc" \
@@ -154,7 +215,7 @@ fi
 
 # Interactive flash: pick a built project and program it to the FPGA
 if [ "$FLASH_MODE" = true ]; then
-    APP_DIR="${SCRIPT_DIR}/app"
+    APP_DIR="${BUILD_SCRIPT_DIR}/app"
     mapfile -t BITS < <(find "$APP_DIR" -name "*.bit" | sort)
     if [ ${#BITS[@]} -eq 0 ]; then
         echo -e "${RED}No built .bit files found. Run ./build.sh --all first.${NC}"

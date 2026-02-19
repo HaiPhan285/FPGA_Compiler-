@@ -36,7 +36,27 @@ sudo apt-get install -y \
     libyaml-cpp-dev \
     flex \
     bison \
-    clang-format-5.0
+    clang-format-5.0 \
+    openFPGALoader \
+    libftdi1-dev \
+    libhidapi-dev \
+    libusb-1.0-0-dev
+
+echo ""
+echo "=== Checking for additional tools ==="
+if ! command -v openFPGALoader &> /dev/null; then
+    echo "Installing openFPGALoader..."
+    sudo apt-get install -y openFPGALoader || echo "Warning: openFPGALoader installation failed. Please install manually."
+else
+    echo "openFPGALoader found."
+fi
+
+if ! command -v nextpnr-xilinx &> /dev/null; then
+    echo "Warning: nextpnr-xilinx not found. Please install it."
+    echo "Example: sudo apt-get install nextpnr-xilinx (if available) or build from source."
+else
+    echo "nextpnr-xilinx found."
+fi
 
 echo ""
 echo "=== Setting up Python environment ==="
@@ -66,6 +86,21 @@ if [ ! -d "database/artix7" ]; then
     
     tar -xzf database.tar.gz -C database/
     rm database.tar.gz
+fi
+
+echo ""
+echo "=== Setting up nextpnr-xilinx chipdb ==="
+CHIPDB_DIR="${HOME}/.local/share/nextpnr/xilinx"
+CHIPDB_FILE="${CHIPDB_DIR}/chipdb-xc7a100t.bin"
+
+if [ ! -f "$CHIPDB_FILE" ]; then
+    echo "Downloading chipdb for XC7A100T..."
+    mkdir -p "$CHIPDB_DIR"
+    wget -q --show-progress -O "$CHIPDB_FILE" \
+        "https://github.com/openXC7/nextpnr-xilinx/releases/download/release-0.5.0/chipdb-xc7a100t.bin" || \
+    echo "Warning: Failed to download chipdb. You may need to install it manually."
+else
+    echo "chipdb already exists at $CHIPDB_FILE"
 fi
 
 echo ""

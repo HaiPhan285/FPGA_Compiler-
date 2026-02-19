@@ -38,7 +38,8 @@ module alu #(parameter w = 8)
             3'd7: y = A;  
             default: y = 0;   
         endcase
-        zero = (y == 0);
+        zero = (y == 0
+        );
         negative = y[w-1];
     end 
     

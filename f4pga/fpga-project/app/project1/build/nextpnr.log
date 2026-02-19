@@ -1,0 +1,362 @@
+Info: Packing constants..
+Info: Inserting IO buffers..
+Info:     IO port 'carry_no_borrow' driven by OBUF '$iopadmap$main.carry_no_borrow'
+Info:     IO port 'negative' driven by OBUF '$iopadmap$main.negative'
+Info:     IO port 'overflow' driven by OBUF '$iopadmap$main.overflow'
+Info:     IO port 'signed_mode' driven by IBUF '$iopadmap$main.signed_mode'
+Info:     IO port 'sub' driven by IBUF '$iopadmap$main.sub'
+Info:     IO port 'zero' driven by OBUF '$iopadmap$main.zero'
+Info:     IO port 'A[0]' driven by IBUF '$iopadmap$main.A'
+Info:     IO port 'A[1]' driven by IBUF '$iopadmap$main.A_1'
+Info:     IO port 'A[2]' driven by IBUF '$iopadmap$main.A_2'
+Info:     IO port 'A[3]' driven by IBUF '$iopadmap$main.A_3'
+Info:     IO port 'A[4]' driven by IBUF '$iopadmap$main.A_4'
+Info:     IO port 'A[5]' driven by IBUF '$iopadmap$main.A_5'
+Info:     IO port 'A[6]' driven by IBUF '$iopadmap$main.A_6'
+Info:     IO port 'A[7]' driven by IBUF '$iopadmap$main.A_7'
+Info:     IO port 'B[0]' driven by IBUF '$iopadmap$main.B'
+Info:     IO port 'B[1]' driven by IBUF '$iopadmap$main.B_1'
+Info:     IO port 'B[2]' driven by IBUF '$iopadmap$main.B_2'
+Info:     IO port 'B[3]' driven by IBUF '$iopadmap$main.B_3'
+Info:     IO port 'B[4]' driven by IBUF '$iopadmap$main.B_4'
+Info:     IO port 'B[5]' driven by IBUF '$iopadmap$main.B_5'
+Info:     IO port 'B[6]' driven by IBUF '$iopadmap$main.B_6'
+Info:     IO port 'B[7]' driven by IBUF '$iopadmap$main.B_7'
+Info:     IO port 'Y[0]' driven by OBUF '$iopadmap$main.Y'
+Info:     IO port 'Y[1]' driven by OBUF '$iopadmap$main.Y_1'
+Info:     IO port 'Y[2]' driven by OBUF '$iopadmap$main.Y_2'
+Info:     IO port 'Y[3]' driven by OBUF '$iopadmap$main.Y_3'
+Info:     IO port 'Y[4]' driven by OBUF '$iopadmap$main.Y_4'
+Info:     IO port 'Y[5]' driven by OBUF '$iopadmap$main.Y_5'
+Info:     IO port 'Y[6]' driven by OBUF '$iopadmap$main.Y_6'
+Info:     IO port 'Y[7]' driven by OBUF '$iopadmap$main.Y_7'
+Info:     Constraining 'carry_no_borrow' to site 'IOB_X0Y67'
+Info:     Tile 'LIOB33_X0Y67'
+Info:     Constraining 'negative' to site 'IOB_X0Y69'
+Info:     Tile 'LIOB33_X0Y69'
+Info:     Constraining 'overflow' to site 'IOB_X0Y71'
+Info:     Tile 'LIOB33_X0Y71'
+Info:     Constraining 'signed_mode' to site 'IOB_X0Y91'
+Info:     Tile 'LIOB33_X0Y91'
+Info:     Constraining 'sub' to site 'IOB_X0Y82'
+Info:     Tile 'LIOB33_X0Y81'
+Info:     Constraining 'zero' to site 'IOB_X0Y56'
+Info:     Tile 'LIOB33_X0Y55'
+Info:     Constraining 'A[0]' to site 'IOB_X0Y101'
+Info:     Tile 'LIOB33_X0Y101'
+Info:     Constraining 'A[1]' to site 'IOB_X0Y93'
+Info:     Tile 'LIOB33_X0Y93'
+Info:     Constraining 'A[2]' to site 'IOB_X0Y87'
+Info:     Tile 'LIOB33_X0Y87'
+Info:     Constraining 'A[3]' to site 'IOB_X0Y73'
+Info:     Tile 'LIOB33_X0Y73'
+Info:     Constraining 'A[4]' to site 'IOB_X0Y75'
+Info:     Tile 'LIOB33_X0Y75'
+Info:     Constraining 'A[5]' to site 'IOB_X0Y85'
+Info:     Tile 'LIOB33_X0Y85'
+Info:     Constraining 'A[6]' to site 'IOB_X0Y65'
+Info:     Tile 'LIOB33_X0Y65'
+Info:     Constraining 'A[7]' to site 'IOB_X0Y89'
+Info:     Tile 'LIOB33_X0Y89'
+Info:     Constraining 'B[0]' to site 'IOB_X1Y51'
+Info:     Tile 'RIOB33_X57Y51'
+Info:     Constraining 'B[1]' to site 'IOB_X1Y50'
+Info:     Tile 'RIOB33_SING_X57Y50'
+Info:     Constraining 'B[2]' to site 'IOB_X0Y70'
+Info:     Tile 'LIOB33_X0Y69'
+Info:     Constraining 'B[3]' to site 'IOB_X0Y54'
+Info:     Tile 'LIOB33_X0Y53'
+Info:     Constraining 'B[4]' to site 'IOB_X1Y102'
+Info:     Tile 'RIOB33_X57Y101'
+Info:     Constraining 'B[5]' to site 'IOB_X0Y60'
+Info:     Tile 'LIOB33_X0Y59'
+Info:     Constraining 'B[6]' to site 'IOB_X0Y61'
+Info:     Tile 'LIOB33_X0Y61'
+Info:     Constraining 'B[7]' to site 'IOB_X0Y58'
+Info:     Tile 'LIOB33_X0Y57'
+Info:     Constraining 'Y[0]' to site 'IOB_X0Y114'
+Info:     Tile 'LIOB33_X0Y113'
+Info:     Constraining 'Y[1]' to site 'IOB_X0Y102'
+Info:     Tile 'LIOB33_X0Y101'
+Info:     Constraining 'Y[2]' to site 'IOB_X0Y115'
+Info:     Tile 'LIOB33_X0Y115'
+Info:     Constraining 'Y[3]' to site 'IOB_X0Y84'
+Info:     Tile 'LIOB33_X0Y83'
+Info:     Constraining 'Y[4]' to site 'IOB_X0Y86'
+Info:     Tile 'LIOB33_X0Y85'
+Info:     Constraining 'Y[5]' to site 'IOB_X0Y63'
+Info:     Tile 'LIOB33_X0Y63'
+Info:     Constraining 'Y[6]' to site 'IOB_X0Y66'
+Info:     Tile 'LIOB33_X0Y65'
+Info:     Constraining 'Y[7]' to site 'IOB_X0Y64'
+Info:     Tile 'LIOB33_X0Y63'
+Info: Generating output buffer for '$iopadmap$main.carry_no_borrow'
+Info: Generating output buffer for '$iopadmap$main.negative'
+Info: Generating output buffer for '$iopadmap$main.overflow'
+Info: Generating input buffer for '$iopadmap$main.signed_mode'
+Info: Generating input buffer for '$iopadmap$main.sub'
+Info: Generating output buffer for '$iopadmap$main.zero'
+Info: Generating input buffer for '$iopadmap$main.A'
+Info: Generating input buffer for '$iopadmap$main.A_1'
+Info: Generating input buffer for '$iopadmap$main.A_2'
+Info: Generating input buffer for '$iopadmap$main.A_3'
+Info: Generating input buffer for '$iopadmap$main.A_4'
+Info: Generating input buffer for '$iopadmap$main.A_5'
+Info: Generating input buffer for '$iopadmap$main.A_6'
+Info: Generating input buffer for '$iopadmap$main.A_7'
+Info: Generating input buffer for '$iopadmap$main.B'
+Info: Generating input buffer for '$iopadmap$main.B_1'
+Info: Generating input buffer for '$iopadmap$main.B_2'
+Info: Generating input buffer for '$iopadmap$main.B_3'
+Info: Generating input buffer for '$iopadmap$main.B_4'
+Info: Generating input buffer for '$iopadmap$main.B_5'
+Info: Generating input buffer for '$iopadmap$main.B_6'
+Info: Generating input buffer for '$iopadmap$main.B_7'
+Info: Generating output buffer for '$iopadmap$main.Y'
+Info: Generating output buffer for '$iopadmap$main.Y_1'
+Info: Generating output buffer for '$iopadmap$main.Y_2'
+Info: Generating output buffer for '$iopadmap$main.Y_3'
+Info: Generating output buffer for '$iopadmap$main.Y_4'
+Info: Generating output buffer for '$iopadmap$main.Y_5'
+Info: Generating output buffer for '$iopadmap$main.Y_6'
+Info: Generating output buffer for '$iopadmap$main.Y_7'
+Info:     Created 30 PAD cells from:
+Info:             30x PAD
+Info: Preparing clocking...
+Info: Packing constants..
+Info: Packing cfg...
+Info: Packing PLLs...
+Info: Packing Gigabit Transceivers..
+Info: Packing global buffers...
+Info: Packing MUX[789]s..
+Info: Packing carries..
+Info:    Grouped 12 MUXCYs and 12 XORCYs into 1 chains.
+Info:    Blasted 0 non-chain MUXCYs and 0 non-chain XORCYs to soft logic
+Info: Packing LUTs..
+Info:     Created 29 SLICE_LUTX cells from:
+Info:             19x LUT1
+Info:              8x LUT3
+Info:              1x LUT5
+Info:              1x LUT6
+Info: Packing DRAM..
+Info:    Transformed 0 tied-low DRAM address inputs to be tied-high
+Info: Packing BRAM..
+Info: Packing DSPs..
+Info: Packing flipflops..
+Info:     Created 3 SELMUX2_1 cells from:
+Info:              2x MUXF7
+Info:              1x MUXF8
+Info: Constrained 0 LUTFF pairs.
+
+Info: Annotating ports with timing budgets for target frequency 12.00 MHz
+Info: Checksum: 0xa3f174a0
+
+Info: Device utilisation:
+Info: 	          SLICE_LUTX:    29/126800     0%
+Info: 	           SLICE_FFX:     0/126800     0%
+Info: 	              CARRY4:     3/15850     0%
+Info: 	          PSEUDO_GND:     1/30932     0%
+Info: 	          PSEUDO_VCC:     1/30932     0%
+Info: 	               HARD0:     0/ 2376     0%
+Info: 	            RAMB18E1:     0/  270     0%
+Info: 	            FIFO18E1:     0/  135     0%
+Info: 	        RAMBFIFO36E1:     0/  135     0%
+Info: 	            RAMB36E1:     0/  135     0%
+Info: 	             DSP48E1:     0/  240     0%
+Info: 	                 PAD:    30/  630     4%
+Info: 	       IOB33M_OUTBUF:     0/  144     0%
+Info: 	       IOB33S_OUTBUF:     0/  144     0%
+Info: 	        IOB33_OUTBUF:    12/  300     4%
+Info: 	     IOB33M_INBUF_EN:     0/  144     0%
+Info: 	     IOB33S_INBUF_EN:     0/  144     0%
+Info: 	      IOB33_INBUF_EN:    18/  300     6%
+Info: 	IOB33M_TERM_OVERRIDE:     0/  144     0%
+Info: 	IOB33S_TERM_OVERRIDE:     0/  144     0%
+Info: 	 IOB33_TERM_OVERRIDE:     0/  300     0%
+Info: 	       PULL_OR_KEEP1:     0/  588     0%
+Info: 	            IDELAYE2:     0/  300     0%
+Info: 	        OLOGICE3_TFF:     0/  300     0%
+Info: 	      OLOGICE3_OUTFF:     0/  300     0%
+Info: 	       OLOGICE3_MISR:     0/  300     0%
+Info: 	           OSERDESE2:     0/  300     0%
+Info: 	        ILOGICE3_IFF:     0/  300     0%
+Info: 	ILOGICE3_ZHOLD_DELAY:     0/  300     0%
+Info: 	           ISERDESE2:     0/  300     0%
+Info: 	                BUFR:     0/   24     0%
+Info: 	               BUFIO:     0/   24     0%
+Info: 	          IDELAYCTRL:     0/    6     0%
+Info: 	            BUFGCTRL:     0/   32     0%
+Info: 	            PCIE_2_1:     0/    1     0%
+Info: 	               BSCAN:     0/    4     0%
+Info: 	                BUFG:     0/   32     0%
+Info: 	              BUFHCE:     0/   96     0%
+Info: 	            DCIRESET:     0/    1     0%
+Info: 	            DNA_PORT:     0/    1     0%
+Info: 	           EFUSE_USR:     0/    1     0%
+Info: 	           FRAME_ECC:     0/    1     0%
+Info: 	       GTPE2_CHANNEL:     0/    8     0%
+Info: 	        GTPE2_COMMON:     0/    2     0%
+Info: 	         IBUFDS_GTE2:     0/    4     0%
+Info: 	                ICAP:     0/    2     0%
+Info: 	            INVERTER:     0/  144     0%
+Info: 	          MMCME2_ADV:     0/    6     0%
+Info: 	        OLOGICE2_TFF:     0/  300     0%
+Info: 	      OLOGICE2_OUTFF:     0/  300     0%
+Info: 	           PLLE2_ADV:     0/    6     0%
+Info: 	           SELMUX2_1:     3/48750     0%
+Info: 	             STARTUP:     0/    1     0%
+Info: 	          USR_ACCESS:     0/    1     0%
+Info: 	              BUFFER:     0/   42     0%
+Info: 	        ILOGICE2_IFF:     0/  300     0%
+Info: 	       OLOGICE2_MISR:     0/  300     0%
+
+Info: Placed 60 cells based on constraints.
+Info: Creating initial analytic placement for 3 cells, random placement wirelen = 7566.
+Info:     at initial placer iter 0, wirelen = 1872
+Info:     at initial placer iter 1, wirelen = 1421
+Info:     at initial placer iter 2, wirelen = 1399
+Info:     at initial placer iter 3, wirelen = 1399
+Info: Running main analytical placer.
+Info:     at iteration #1, type ALL: wirelen solved = 1401, spread = 1401, legal = 1843; time = 0.00s
+Info:     at iteration #2, type ALL: wirelen solved = 1509, spread = 1509, legal = 1737; time = 0.00s
+Info: HeAP Placer Time: 0.04s
+Info:   of which solving equations: 0.00s
+Info:   of which spreading cells: 0.01s
+Info:   of which strict legalisation: 0.00s
+
+Info: Running simulated annealing placer for refinement.
+Info:   at iteration #1: temp = 0.000000, timing cost = 0, wirelen = 1737
+iter #1: temp = 0.000000, timing cost = 0, wirelen = 1703, dia = 3, Ra = 0.35 
+Info:   at iteration #2: temp = 0.000000, timing cost = 0, wirelen = 1703 
+Info: SA placement time 0.00s
+Warning: No clocks found in design
+
+Info: Checksum: 0xd47fa83f
+Info: Running post-placement legalisation...
+Info: Routing global clocks...
+Info: Running router2...
+Info: Setting up routing resources...
+Info:     x splitpoint: 6
+Info:     y splitpoint: 121
+Info:         bin 0 N=7
+Info:         bin 1 N=1
+Info:         bin 2 N=15
+Info:         bin 3 N=2
+Info:         bin 4 N=72
+Info: Running main router loop...
+Info:     iter=1 wires=637 overused=11 overuse=11 archfail=NA
+Info:     iter=2 wires=643 overused=0 overuse=0 archfail=0
+Info: 1000 slowest nets by runtime:
+                                                                                  ext[5]      2 37.2ms
+                                                                                  ext[8]      1 22.4ms
+                                                                 $abc$2191$iopadmap$zero      1 21.0ms
+                                                                                  ext[0]      2 20.0ms
+                                                                                  ext[2]      2 19.1ms
+                                                                                  ext[7]      4 16.9ms
+                                                             $abc$2191$iopadmap$overflow      1 14.2ms
+                                                                                  ext[1]      2 13.6ms
+                                                                                  ext[6]      3 11.7ms
+                        $techmap2212$abc$2191$auto$blifparse.cc:525:parse_blif$2198.A[1]      1 6.6ms
+                                                                                  ext[4]      2 6.5ms
+                                                                                  ext[3]      2 5.3ms
+                        $techmap2205$abc$2191$auto$blifparse.cc:525:parse_blif$2194.A[0]     10 1.2ms
+                        $techmap2206$abc$2191$auto$blifparse.cc:525:parse_blif$2197.A[2]      2 1.1ms
+                        $techmap2209$abc$2191$auto$blifparse.cc:525:parse_blif$2201.A[2]      3 0.9ms
+                        $techmap2207$abc$2191$auto$blifparse.cc:525:parse_blif$2200.A[2]      2 0.8ms
+                        $techmap2213$abc$2191$auto$blifparse.cc:525:parse_blif$2195.A[1]      1 0.7ms
+                        $techmap2209$abc$2191$auto$blifparse.cc:525:parse_blif$2201.A[1]      2 0.7ms
+                        $techmap2210$abc$2191$auto$blifparse.cc:525:parse_blif$2199.A[2]      2 0.6ms
+                        $techmap2212$abc$2191$auto$blifparse.cc:525:parse_blif$2198.A[2]      2 0.6ms
+               $techmap2206$abc$2191$auto$blifparse.cc:525:parse_blif$2197.A[2]$legal$13      1 0.5ms
+                        $techmap2206$abc$2191$auto$blifparse.cc:525:parse_blif$2197.A[1]      1 0.4ms
+                        $techmap2205$abc$2191$auto$blifparse.cc:525:parse_blif$2194.A[1]      1 0.4ms
+                                                                $PACKER_GND_NET$legal$29      1 0.4ms
+                                                                $PACKER_GND_NET$legal$37      1 0.4ms
+                                                                $PACKER_GND_NET$legal$25      1 0.4ms
+               $techmap2208$abc$2191$auto$blifparse.cc:525:parse_blif$2196.A[2]$legal$11      1 0.4ms
+                                                                         $PACKER_GND_NET     11 0.4ms
+               $techmap2210$abc$2191$auto$blifparse.cc:525:parse_blif$2199.A[2]$legal$17      1 0.4ms
+                        $techmap2207$abc$2191$auto$blifparse.cc:525:parse_blif$2200.A[1]      1 0.3ms
+                        $techmap2210$abc$2191$auto$blifparse.cc:525:parse_blif$2199.A[1]      1 0.3ms
+                        $techmap2211$abc$2191$auto$blifparse.cc:525:parse_blif$2193.A[4]      1 0.3ms
+                $techmap2213$abc$2191$auto$blifparse.cc:525:parse_blif$2195.A[2]$legal$9      1 0.3ms
+                        $techmap2208$abc$2191$auto$blifparse.cc:525:parse_blif$2196.A[2]      2 0.3ms
+                        $techmap2208$abc$2191$auto$blifparse.cc:525:parse_blif$2196.A[1]      1 0.2ms
+                        $techmap2213$abc$2191$auto$blifparse.cc:525:parse_blif$2195.A[2]      2 0.2ms
+                        $techmap2205$abc$2191$auto$blifparse.cc:525:parse_blif$2194.A[2]      2 0.2ms
+                                                                         $PACKER_VCC_NET     12 0.2ms
+               $techmap2207$abc$2191$auto$blifparse.cc:525:parse_blif$2200.A[2]$legal$19      1 0.2ms
+                                                                $PACKER_GND_NET$legal$33      1 0.2ms
+               $techmap2209$abc$2191$auto$blifparse.cc:525:parse_blif$2201.A[2]$legal$21      1 0.2ms
+               $techmap2212$abc$2191$auto$blifparse.cc:525:parse_blif$2198.A[2]$legal$15      1 0.2ms
+                $techmap2205$abc$2191$auto$blifparse.cc:525:parse_blif$2194.A[2]$legal$7      1 0.1ms
+                                              $auto$alumacc.cc:485:replace_alu$1633.X[4]      1 0.0ms
+                                             $auto$alumacc.cc:485:replace_alu$1633.CO[7]      1 0.0ms
+                                                                                    Y[6]      1 0.0ms
+                                             $auto$alumacc.cc:485:replace_alu$1633.CO[3]      1 0.0ms
+                                                                                overflow      1 0.0ms
+                                                                                    Y[7]      1 0.0ms
+                                                                                    Y[2]      1 0.0ms
+                                                                                    Y[0]      1 0.0ms
+                                              $auto$alumacc.cc:485:replace_alu$1633.X[0]      1 0.0ms
+                                                                                    zero      1 0.0ms
+                                                                                negative      1 0.0ms
+                                                                         carry_no_borrow      1 0.0ms
+                                                                $PACKER_GND_NET$legal$35      1 0.0ms
+                                                                $PACKER_GND_NET$legal$31      1 0.0ms
+                                                                $PACKER_GND_NET$legal$27      1 0.0ms
+                                                                $PACKER_GND_NET$legal$23      1 0.0ms
+                                                                 $PACKER_GND_NET$legal$5      1 0.0ms
+                                                                 $PACKER_GND_NET$legal$3      1 0.0ms
+                                                                 $PACKER_GND_NET$legal$1      1 0.0ms
+                                                                                    Y[5]      1 0.0ms
+                                                                                    Y[4]      1 0.0ms
+                                                                                    Y[3]      1 0.0ms
+                                                                                    Y[1]      1 0.0ms
+                                                                                    B[7]      2 0.0ms
+                                                                                    B[6]      2 0.0ms
+                                                                                    B[5]      2 0.0ms
+                                                                                    B[4]      2 0.0ms
+                                                                                    B[3]      2 0.0ms
+                                                                                    B[2]      2 0.0ms
+                                                                                    B[1]      2 0.0ms
+                                                                                    B[0]      2 0.0ms
+                                                                                    A[7]      2 0.0ms
+                                                                                    A[6]      2 0.0ms
+                                                                                    A[5]      2 0.0ms
+                                                                                    A[4]      2 0.0ms
+                                                                                    A[3]      2 0.0ms
+                                                                                    A[2]      2 0.0ms
+                                                                                    A[1]      2 0.0ms
+                                                                                    A[0]      2 0.0ms
+                                     $auto$alumacc.cc:485:replace_alu$1633.genblk1.O[11]      0 0.0ms
+                                     $auto$alumacc.cc:485:replace_alu$1633.genblk1.O[10]      0 0.0ms
+                                      $auto$alumacc.cc:485:replace_alu$1633.genblk1.O[9]      0 0.0ms
+                                     $auto$alumacc.cc:485:replace_alu$1633.genblk1.C[11]      0 0.0ms
+                                              $auto$alumacc.cc:485:replace_alu$1633.X[7]      1 0.0ms
+                                              $auto$alumacc.cc:485:replace_alu$1633.X[6]      1 0.0ms
+                                              $auto$alumacc.cc:485:replace_alu$1633.X[5]      1 0.0ms
+                                              $auto$alumacc.cc:485:replace_alu$1633.X[3]      1 0.0ms
+                                              $auto$alumacc.cc:485:replace_alu$1633.X[2]      1 0.0ms
+                                              $auto$alumacc.cc:485:replace_alu$1633.X[1]      1 0.0ms
+        $abc$2191$auto$blifparse.cc:525:parse_blif$2192.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.f1      1 0.0ms
+        $abc$2191$auto$blifparse.cc:525:parse_blif$2192.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.f0      1 0.0ms
+        $abc$2191$auto$blifparse.cc:525:parse_blif$2192.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.lut0.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.f0      1 0.0ms
+                                                                                     sub      2 0.0ms
+                                                                             signed_mode      2 0.0ms
+Info: Router2 time 1.37s
+Info: Running router1 to check that route is legal...
+
+Info: Routing..
+Info: Setting up routing queue.
+Info: Routing 0 arcs.
+Info:            |   (re-)routed arcs  |   delta    | remaining|       time spent     |
+Info:    IterCnt |  w/ripup   wo/ripup |  w/r  wo/r |      arcs| batch(sec) total(sec)|
+Info:          0 |        0          0 |    0     0 |         0|       0.00       0.00|
+Info: Routing complete.
+Info: Router1 time 0.00s
+Info: Checksum: 0xd73a2e3f
+Warning: No clocks found in design
+
+Info: Running post-routing legalisation...
+2 warnings, 0 errors
