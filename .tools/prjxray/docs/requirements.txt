@@ -1,0 +1,13 @@
+http://github.com/SymbiFlow/sphinx_symbiflow_theme/archive/chips.zip#sphinx-symbiflow-theme
+
+docutils
+sphinx
+sphinx-autobuild
+
+breathe
+recommonmark
+sphinx-markdown-tables
+sphinxcontrib-napoleon
+
+# Markdown cross-reference solver library
+http://github.com/SymbiFlow/sphinxcontrib-markdown-symlinks/archive/master.zip#sphinxcontrib-markdown-symlinks

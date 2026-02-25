@@ -1,0 +1,35 @@
+name: Automerge
+
+concurrency:
+  group: ${{ github.repository }}-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+on:
+  pull_request:
+  push:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+
+
+  Pipeline:
+    if: ${{ !(github.event_name != 'pull_request' && github.actor == 'dependabot[bot]') }}
+    uses: ./.github/workflows/Pipeline.yml
+    secrets:
+      LICENSE_TUNNEL_KEY_DATA: ${{ secrets.LICENSE_TUNNEL_KEY_DATA }}
+
+
+  Automerge:
+    needs: Pipeline
+    if: github.event_name == 'pull_request' && github.actor == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    name: Automerge dependabot PRs
+    permissions:
+      contents: write
+
+    steps:
+
+      - name: Auto-merge Dependabot PR
+        run: GITHUB_TOKEN='${{ github.token }}' gh pr merge '${{ github.event.pull_request.html_url }}' --squash

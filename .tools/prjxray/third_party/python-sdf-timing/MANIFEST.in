@@ -1,0 +1,12 @@
+# Include the README
+include *.md
+
+# Include the license file
+include AUTHORS
+include LICENSE
+
+include *.yapf
+include *.txt
+
+recursive-include tests *.py
+recursive-include tests *.sdf

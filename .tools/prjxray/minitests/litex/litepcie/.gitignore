@@ -1,0 +1,7 @@
+# Build data
+build
+*.fasm
+*.ok
+
+# Riscv toolchain
+riscv*

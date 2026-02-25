@@ -1,0 +1,15 @@
+name: fasm-docs
+channels:
+- SymbiFlow
+- conda-forge
+- defaults
+dependencies:
+- python=3.7
+- pip
+# ReadTheDoc dependencies
+- mock
+- pillow
+- sphinx
+# Packages installed from PyPI
+- pip:
+  - -r requirements.txt
