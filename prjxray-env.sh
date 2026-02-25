@@ -37,6 +37,9 @@ export XRAY_BITTOOL="${XRAY_TOOLS_DIR}/bittool"
 export XRAY_BLOCKWIDTH="python3 ${XRAY_UTILS_DIR}/blockwidth.py"
 export XRAY_PARSEDB="python3 ${XRAY_UTILS_DIR}/parsedb.py"
 
+# Add tools to PATH
+export PATH="${XRAY_TOOLS_DIR}:${PATH}"
+
 # Suppress warnings
 export PYTHONWARNINGS=ignore::DeprecationWarning:distutils
 
