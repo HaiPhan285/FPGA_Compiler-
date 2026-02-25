@@ -7,3 +7,7 @@ app/**/*.json
 f4pga/.tools/
 f4pga/fpga-project/build/
 f4pga/fpga-project/command.txt
+
+# Tool build artifacts
+.tools/
+!.tools/env/
