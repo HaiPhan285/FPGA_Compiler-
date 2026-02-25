@@ -1645,6 +1645,6 @@ Found and reported 0 problems.
 
 4. Executing JSON backend.
 
-End of script. Logfile hash: 31e7a73674, CPU: user 2.24s system 0.07s, MEM: 133.20 MB peak
+End of script. Logfile hash: 31e7a73674, CPU: user 2.29s system 0.09s, MEM: 132.91 MB peak
 Yosys 0.33 (git sha1 2584903a060)
-Time spent: 57% 19x read_verilog (1 sec), 9% 1x synth_xilinx (0 sec), ...
+Time spent: 59% 19x read_verilog (1 sec), 9% 1x synth_xilinx (0 sec), ...

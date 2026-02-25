@@ -4,9 +4,9 @@
 
 # Get the directory where this script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-export XRAY_DIR="${SCRIPT_DIR}/prjxray"
+export XRAY_DIR="${SCRIPT_DIR}/.tools/prjxray"
 export XRAY_UTILS_DIR="${XRAY_DIR}/utils"
-export XRAY_DATABASE_DIR="${XRAY_DIR}/database"
+export XRAY_DATABASE_DIR="${SCRIPT_DIR}/.tools/prjxray-db"
 export XRAY_TOOLS_DIR="${XRAY_DIR}/build/tools"
 export XRAY_FUZZERS_DIR="${XRAY_DIR}/fuzzers"
 

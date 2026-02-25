@@ -1,0 +1,162 @@
+Info: Packing constants..
+Info: Inserting IO buffers..
+Info:     IO port 'a' driven by IBUF '$iopadmap$or_gate.a'
+Info:     IO port 'b' driven by IBUF '$iopadmap$or_gate.b'
+Info:     IO port 'y' driven by OBUF '$iopadmap$or_gate.y'
+Info:     Constraining 'a' to site 'IOB_X0Y101'
+Info:     Tile 'LIOB33_X0Y101'
+Info:     Constraining 'b' to site 'IOB_X0Y93'
+Info:     Tile 'LIOB33_X0Y93'
+Info:     Constraining 'y' to site 'IOB_X0Y114'
+Info:     Tile 'LIOB33_X0Y113'
+Info: Generating input buffer for '$iopadmap$or_gate.a'
+Info: Generating input buffer for '$iopadmap$or_gate.b'
+Info: Generating output buffer for '$iopadmap$or_gate.y'
+Info:     Created 3 PAD cells from:
+Info:              3x PAD
+Info: Preparing clocking...
+Info: Packing constants..
+Info: Packing cfg...
+Info: Packing PLLs...
+Info: Packing Gigabit Transceivers..
+Info: Packing global buffers...
+Info: Packing MUX[789]s..
+Info: Packing carries..
+Info:    Grouped 0 MUXCYs and 0 XORCYs into 0 chains.
+Info:    Blasted 0 non-chain MUXCYs and 0 non-chain XORCYs to soft logic
+Info: Packing LUTs..
+Info:     Created 1 SLICE_LUTX cells from:
+Info:              1x LUT2
+Info: Packing DRAM..
+Info:    Transformed 0 tied-low DRAM address inputs to be tied-high
+Info: Packing BRAM..
+Info: Packing DSPs..
+Info: Packing flipflops..
+Info: Constrained 0 LUTFF pairs.
+
+Info: Annotating ports with timing budgets for target frequency 12.00 MHz
+Info: Checksum: 0xf78c7620
+
+Info: Device utilisation:
+Info: 	          SLICE_LUTX:     1/126800     0%
+Info: 	           SLICE_FFX:     0/126800     0%
+Info: 	              CARRY4:     0/15850     0%
+Info: 	          PSEUDO_GND:     1/30932     0%
+Info: 	          PSEUDO_VCC:     1/30932     0%
+Info: 	               HARD0:     0/ 2376     0%
+Info: 	            RAMB18E1:     0/  270     0%
+Info: 	            FIFO18E1:     0/  135     0%
+Info: 	        RAMBFIFO36E1:     0/  135     0%
+Info: 	            RAMB36E1:     0/  135     0%
+Info: 	             DSP48E1:     0/  240     0%
+Info: 	                 PAD:     3/  630     0%
+Info: 	       IOB33M_OUTBUF:     0/  144     0%
+Info: 	       IOB33S_OUTBUF:     0/  144     0%
+Info: 	        IOB33_OUTBUF:     1/  300     0%
+Info: 	     IOB33M_INBUF_EN:     0/  144     0%
+Info: 	     IOB33S_INBUF_EN:     0/  144     0%
+Info: 	      IOB33_INBUF_EN:     2/  300     0%
+Info: 	IOB33M_TERM_OVERRIDE:     0/  144     0%
+Info: 	IOB33S_TERM_OVERRIDE:     0/  144     0%
+Info: 	 IOB33_TERM_OVERRIDE:     0/  300     0%
+Info: 	       PULL_OR_KEEP1:     0/  588     0%
+Info: 	            IDELAYE2:     0/  300     0%
+Info: 	        OLOGICE3_TFF:     0/  300     0%
+Info: 	      OLOGICE3_OUTFF:     0/  300     0%
+Info: 	       OLOGICE3_MISR:     0/  300     0%
+Info: 	           OSERDESE2:     0/  300     0%
+Info: 	        ILOGICE3_IFF:     0/  300     0%
+Info: 	ILOGICE3_ZHOLD_DELAY:     0/  300     0%
+Info: 	           ISERDESE2:     0/  300     0%
+Info: 	                BUFR:     0/   24     0%
+Info: 	               BUFIO:     0/   24     0%
+Info: 	          IDELAYCTRL:     0/    6     0%
+Info: 	            BUFGCTRL:     0/   32     0%
+Info: 	            PCIE_2_1:     0/    1     0%
+Info: 	               BSCAN:     0/    4     0%
+Info: 	                BUFG:     0/   32     0%
+Info: 	              BUFHCE:     0/   96     0%
+Info: 	            DCIRESET:     0/    1     0%
+Info: 	            DNA_PORT:     0/    1     0%
+Info: 	           EFUSE_USR:     0/    1     0%
+Info: 	           FRAME_ECC:     0/    1     0%
+Info: 	       GTPE2_CHANNEL:     0/    8     0%
+Info: 	        GTPE2_COMMON:     0/    2     0%
+Info: 	         IBUFDS_GTE2:     0/    4     0%
+Info: 	                ICAP:     0/    2     0%
+Info: 	            INVERTER:     0/  144     0%
+Info: 	          MMCME2_ADV:     0/    6     0%
+Info: 	        OLOGICE2_TFF:     0/  300     0%
+Info: 	      OLOGICE2_OUTFF:     0/  300     0%
+Info: 	           PLLE2_ADV:     0/    6     0%
+Info: 	           SELMUX2_1:     0/48750     0%
+Info: 	             STARTUP:     0/    1     0%
+Info: 	          USR_ACCESS:     0/    1     0%
+Info: 	              BUFFER:     0/   42     0%
+Info: 	        ILOGICE2_IFF:     0/  300     0%
+Info: 	       OLOGICE2_MISR:     0/  300     0%
+
+Info: Placed 6 cells based on constraints.
+Info: Creating initial analytic placement for 1 cells, random placement wirelen = 663.
+Info:     at initial placer iter 0, wirelen = 44
+Info:     at initial placer iter 1, wirelen = 44
+Info:     at initial placer iter 2, wirelen = 44
+Info:     at initial placer iter 3, wirelen = 44
+Info: Running main analytical placer.
+Info:     at iteration #1, type SLICE_LUTX: wirelen solved = 44, spread = 44, legal = 72; time = 0.00s
+Info:     at iteration #2, type SLICE_LUTX: wirelen solved = 42, spread = 42, legal = 99; time = 0.00s
+Info:     at iteration #3, type SLICE_LUTX: wirelen solved = 44, spread = 44, legal = 99; time = 0.00s
+Info:     at iteration #4, type SLICE_LUTX: wirelen solved = 42, spread = 42, legal = 78; time = 0.00s
+Info:     at iteration #5, type SLICE_LUTX: wirelen solved = 46, spread = 46, legal = 91; time = 0.00s
+Info:     at iteration #6, type SLICE_LUTX: wirelen solved = 42, spread = 42, legal = 99; time = 0.00s
+Info: HeAP Placer Time: 0.05s
+Info:   of which solving equations: 0.00s
+Info:   of which spreading cells: 0.01s
+Info:   of which strict legalisation: 0.00s
+
+Info: Running simulated annealing placer for refinement.
+Info:   at iteration #1: temp = 0.000000, timing cost = 0, wirelen = 72
+iter #1: temp = 0.000000, timing cost = 0, wirelen = 72, dia = 3, Ra = 0.33 
+Info:   at iteration #2: temp = 0.000000, timing cost = 0, wirelen = 72 
+Info: SA placement time 0.00s
+Warning: No clocks found in design
+
+Info: Checksum: 0xdb75e5ad
+Info: Running post-placement legalisation...
+Info: Routing global clocks...
+Info: Running router2...
+Info: Setting up routing resources...
+Info:     x splitpoint: 0
+Info:     y splitpoint: 96
+Info:         bin 0 N=0
+Info:         bin 1 N=1
+Info:         bin 2 N=0
+Info:         bin 3 N=4
+Info:         bin 4 N=3
+Info: Running main router loop...
+Info:     iter=1 wires=43 overused=0 overuse=0 archfail=0
+Info: 1000 slowest nets by runtime:
+                                                                    $abc$2109$iopadmap$y      1 14.7ms
+                        $techmap2114$abc$2109$auto$blifparse.cc:525:parse_blif$2110.A[0]      1 0.7ms
+                        $techmap2114$abc$2109$auto$blifparse.cc:525:parse_blif$2110.A[1]      1 0.5ms
+                                                                         $PACKER_VCC_NET      0 0.0ms
+                                                                         $PACKER_GND_NET      0 0.0ms
+                                                                                       y      1 0.0ms
+                                                                                       b      2 0.0ms
+                                                                                       a      2 0.0ms
+Info: Router2 time 1.05s
+Info: Running router1 to check that route is legal...
+
+Info: Routing..
+Info: Setting up routing queue.
+Info: Routing 0 arcs.
+Info:            |   (re-)routed arcs  |   delta    | remaining|       time spent     |
+Info:    IterCnt |  w/ripup   wo/ripup |  w/r  wo/r |      arcs| batch(sec) total(sec)|
+Info:          0 |        0          0 |    0     0 |         0|       0.00       0.00|
+Info: Routing complete.
+Info: Router1 time 0.00s
+Info: Checksum: 0x5dcc3098
+Warning: No clocks found in design
+
+Info: Running post-routing legalisation...
+2 warnings, 0 errors

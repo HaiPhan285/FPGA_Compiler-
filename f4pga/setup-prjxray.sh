@@ -9,13 +9,14 @@ echo "=== Setting up prjxray for Nexys A7-100T ==="
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Check if prjxray already exists
-if [ -d "${SCRIPT_DIR}/prjxray" ]; then
+if [ -d "${SCRIPT_DIR}/.tools/prjxray" ]; then
     echo "prjxray directory already exists. Updating..."
-    cd "${SCRIPT_DIR}/prjxray"
+    cd "${SCRIPT_DIR}/.tools/prjxray"
     git pull
 else
     echo "Cloning prjxray repository..."
-    cd "${SCRIPT_DIR}"
+    mkdir -p "${SCRIPT_DIR}/.tools"
+    cd "${SCRIPT_DIR}/.tools"
     git clone https://github.com/f4pga/prjxray.git
     cd prjxray
 fi
@@ -60,8 +61,8 @@ fi
 
 echo ""
 echo "=== Setting up Python environment ==="
-python3 -m venv env
-source env/bin/activate
+python3 -m venv "${SCRIPT_DIR}/.tools/env"
+source "${SCRIPT_DIR}/.tools/env/bin/activate"
 
 echo ""
 echo "=== Installing Python dependencies ==="
@@ -75,8 +76,9 @@ make build
 echo ""
 echo "=== Downloading pre-built database (faster than building) ==="
 # Download the latest database instead of building it
-mkdir -p database
-if [ ! -d "database/artix7" ]; then
+mkdir -p "${SCRIPT_DIR}/.tools/prjxray-db"
+cd "${SCRIPT_DIR}/.tools/prjxray-db"
+if [ ! -d "artix7" ]; then
     echo "Downloading artix7 database..."
     # Download database from GitHub releases
     wget -q --show-progress -O database.tar.gz \
@@ -84,7 +86,7 @@ if [ ! -d "database/artix7" ]; then
     wget -q --show-progress -O database.tar.gz \
         "https://storage.googleapis.com/prjxray-db/database.tar.gz"
     
-    tar -xzf database.tar.gz -C database/
+    tar -xzf database.tar.gz
     rm database.tar.gz
 fi
 

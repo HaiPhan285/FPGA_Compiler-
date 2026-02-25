@@ -4,3 +4,6 @@ app/**/*.bit
 app/**/*.fasm
 app/**/*.frames
 app/**/*.json
+f4pga/.tools/
+f4pga/fpga-project/build/
+f4pga/fpga-project/command.txt

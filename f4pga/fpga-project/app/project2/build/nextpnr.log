@@ -39,38 +39,38 @@ Info:     Constraining 'overflow' to site 'IOB_X0Y69'
 Info:     Tile 'LIOB33_X0Y69'
 Info:     Constraining 'zero' to site 'IOB_X0Y67'
 Info:     Tile 'LIOB33_X0Y67'
-Info:     Constraining 'A[0]' to site 'IOB_X0Y101'
-Info:     Tile 'LIOB33_X0Y101'
-Info:     Constraining 'A[1]' to site 'IOB_X0Y93'
-Info:     Tile 'LIOB33_X0Y93'
-Info:     Constraining 'A[2]' to site 'IOB_X0Y87'
-Info:     Tile 'LIOB33_X0Y87'
-Info:     Constraining 'A[3]' to site 'IOB_X0Y73'
-Info:     Tile 'LIOB33_X0Y73'
-Info:     Constraining 'A[4]' to site 'IOB_X0Y75'
-Info:     Tile 'LIOB33_X0Y75'
-Info:     Constraining 'A[5]' to site 'IOB_X0Y85'
-Info:     Tile 'LIOB33_X0Y85'
-Info:     Constraining 'A[6]' to site 'IOB_X0Y65'
-Info:     Tile 'LIOB33_X0Y65'
-Info:     Constraining 'A[7]' to site 'IOB_X0Y89'
-Info:     Tile 'LIOB33_X0Y89'
-Info:     Constraining 'B[0]' to site 'IOB_X1Y51'
+Info:     Constraining 'A[0]' to site 'IOB_X1Y51'
 Info:     Tile 'RIOB33_X57Y51'
-Info:     Constraining 'B[1]' to site 'IOB_X1Y50'
+Info:     Constraining 'A[1]' to site 'IOB_X1Y50'
 Info:     Tile 'RIOB33_SING_X57Y50'
-Info:     Constraining 'B[2]' to site 'IOB_X0Y70'
+Info:     Constraining 'A[2]' to site 'IOB_X0Y70'
 Info:     Tile 'LIOB33_X0Y69'
-Info:     Constraining 'B[3]' to site 'IOB_X0Y54'
+Info:     Constraining 'A[3]' to site 'IOB_X0Y54'
 Info:     Tile 'LIOB33_X0Y53'
-Info:     Constraining 'B[4]' to site 'IOB_X1Y102'
+Info:     Constraining 'A[4]' to site 'IOB_X1Y102'
 Info:     Tile 'RIOB33_X57Y101'
-Info:     Constraining 'B[5]' to site 'IOB_X0Y60'
+Info:     Constraining 'A[5]' to site 'IOB_X0Y60'
 Info:     Tile 'LIOB33_X0Y59'
-Info:     Constraining 'B[6]' to site 'IOB_X0Y61'
+Info:     Constraining 'A[6]' to site 'IOB_X0Y61'
 Info:     Tile 'LIOB33_X0Y61'
-Info:     Constraining 'B[7]' to site 'IOB_X0Y58'
+Info:     Constraining 'A[7]' to site 'IOB_X0Y58'
 Info:     Tile 'LIOB33_X0Y57'
+Info:     Constraining 'B[0]' to site 'IOB_X0Y101'
+Info:     Tile 'LIOB33_X0Y101'
+Info:     Constraining 'B[1]' to site 'IOB_X0Y93'
+Info:     Tile 'LIOB33_X0Y93'
+Info:     Constraining 'B[2]' to site 'IOB_X0Y87'
+Info:     Tile 'LIOB33_X0Y87'
+Info:     Constraining 'B[3]' to site 'IOB_X0Y73'
+Info:     Tile 'LIOB33_X0Y73'
+Info:     Constraining 'B[4]' to site 'IOB_X0Y75'
+Info:     Tile 'LIOB33_X0Y75'
+Info:     Constraining 'B[5]' to site 'IOB_X0Y85'
+Info:     Tile 'LIOB33_X0Y85'
+Info:     Constraining 'B[6]' to site 'IOB_X0Y65'
+Info:     Tile 'LIOB33_X0Y65'
+Info:     Constraining 'B[7]' to site 'IOB_X0Y89'
+Info:     Tile 'LIOB33_X0Y89'
 Info:     Constraining 'op[0]' to site 'IOB_X0Y79'
 Info:     Tile 'LIOB33_X0Y79'
 Info:     Constraining 'op[1]' to site 'IOB_X0Y82'
@@ -155,7 +155,7 @@ Info:              4x MUXF8
 Info: Constrained 0 LUTFF pairs.
 
 Info: Annotating ports with timing budgets for target frequency 12.00 MHz
-Info: Checksum: 0x2695b987
+Info: Checksum: 0xfca1690b
 
 Info: Device utilisation:
 Info: 	          SLICE_LUTX:    94/126800     0%
@@ -217,169 +217,174 @@ Info: 	        ILOGICE2_IFF:     0/  300     0%
 Info: 	       OLOGICE2_MISR:     0/  300     0%
 
 Info: Placed 62 cells based on constraints.
-Info: Creating initial analytic placement for 35 cells, random placement wirelen = 17846.
-Info:     at initial placer iter 0, wirelen = 2018
-Info:     at initial placer iter 1, wirelen = 1625
-Info:     at initial placer iter 2, wirelen = 1497
-Info:     at initial placer iter 3, wirelen = 1475
+Info: Creating initial analytic placement for 35 cells, random placement wirelen = 17505.
+Info:     at initial placer iter 0, wirelen = 2035
+Info:     at initial placer iter 1, wirelen = 1619
+Info:     at initial placer iter 2, wirelen = 1473
+Info:     at initial placer iter 3, wirelen = 1427
 Info: Running main analytical placer.
-Info:     at iteration #1, type ALL: wirelen solved = 1467, spread = 2301, legal = 3012; time = 0.01s
-Info:     at iteration #2, type ALL: wirelen solved = 1601, spread = 2013, legal = 3223; time = 0.01s
-Info:     at iteration #3, type ALL: wirelen solved = 1581, spread = 2005, legal = 2740; time = 0.01s
-Info:     at iteration #4, type ALL: wirelen solved = 1539, spread = 1979, legal = 2959; time = 0.01s
-Info:     at iteration #5, type ALL: wirelen solved = 1658, spread = 2142, legal = 2831; time = 0.01s
-Info:     at iteration #6, type ALL: wirelen solved = 1678, spread = 2084, legal = 2482; time = 0.01s
-Info:     at iteration #7, type ALL: wirelen solved = 1623, spread = 2516, legal = 2224; time = 0.01s
-Info:     at iteration #8, type ALL: wirelen solved = 1687, spread = 2118, legal = 2591; time = 0.01s
-Info:     at iteration #9, type ALL: wirelen solved = 1737, spread = 2458, legal = 2480; time = 0.01s
-Info:     at iteration #10, type ALL: wirelen solved = 1789, spread = 2439, legal = 2434; time = 0.01s
-Info:     at iteration #11, type ALL: wirelen solved = 1859, spread = 2564, legal = 2270; time = 0.01s
-Info: HeAP Placer Time: 0.10s
+Info:     at iteration #1, type ALL: wirelen solved = 1445, spread = 1925, legal = 2788; time = 0.00s
+Info:     at iteration #2, type ALL: wirelen solved = 1557, spread = 2045, legal = 2775; time = 0.01s
+Info:     at iteration #3, type ALL: wirelen solved = 1543, spread = 1981, legal = 2803; time = 0.00s
+Info:     at iteration #4, type ALL: wirelen solved = 1595, spread = 2065, legal = 3027; time = 0.01s
+Info:     at iteration #5, type ALL: wirelen solved = 1651, spread = 2189, legal = 2696; time = 0.01s
+Info:     at iteration #6, type ALL: wirelen solved = 1603, spread = 2045, legal = 2877; time = 0.00s
+Info:     at iteration #7, type ALL: wirelen solved = 1690, spread = 2056, legal = 2877; time = 0.00s
+Info:     at iteration #8, type ALL: wirelen solved = 1766, spread = 2108, legal = 2410; time = 0.01s
+Info:     at iteration #9, type ALL: wirelen solved = 1731, spread = 2484, legal = 2455; time = 0.01s
+Info:     at iteration #10, type ALL: wirelen solved = 1779, spread = 2113, legal = 2315; time = 0.00s
+Info:     at iteration #11, type ALL: wirelen solved = 1807, spread = 2423, legal = 2509; time = 0.01s
+Info:     at iteration #12, type ALL: wirelen solved = 1942, spread = 2274, legal = 2435; time = 0.00s
+Info:     at iteration #13, type ALL: wirelen solved = 1976, spread = 2288, legal = 2319; time = 0.01s
+Info: HeAP Placer Time: 0.11s
 Info:   of which solving equations: 0.01s
 Info:   of which spreading cells: 0.04s
 Info:   of which strict legalisation: 0.00s
 
 Info: Running simulated annealing placer for refinement.
-Info:   at iteration #1: temp = 0.000000, timing cost = 0, wirelen = 2224
-iter #1: temp = 0.000000, timing cost = 0, wirelen = 2143, dia = 3, Ra = 0.20 
-iter #2: temp = 0.000000, timing cost = 0, wirelen = 2107, dia = 2, Ra = 0.17 
-iter #3: temp = 0.000000, timing cost = 0, wirelen = 2100, dia = 2, Ra = 0.18 
-iter #4: temp = 0.000000, timing cost = 0, wirelen = 2098, dia = 1, Ra = 0.19 
-Info:   at iteration #5: temp = 0.000000, timing cost = 0, wirelen = 2098
-Info:   at iteration #5: temp = 0.000000, timing cost = 0, wirelen = 2098 
+Info:   at iteration #1: temp = 0.000000, timing cost = 0, wirelen = 2315
+iter #1: temp = 0.000000, timing cost = 0, wirelen = 2158, dia = 3, Ra = 0.22 
+iter #2: temp = 0.000000, timing cost = 0, wirelen = 2119, dia = 3, Ra = 0.12 
+iter #3: temp = 0.000000, timing cost = 0, wirelen = 2115, dia = 3, Ra = 0.10 
+iter #4: temp = 0.000000, timing cost = 0, wirelen = 2107, dia = 3, Ra = 0.10 
+Info:   at iteration #5: temp = 0.000000, timing cost = 0, wirelen = 2107
+iter #5: temp = 0.000000, timing cost = 0, wirelen = 2113, dia = 3, Ra = 0.09 
+Info:   at iteration #6: temp = 0.000000, timing cost = 0, wirelen = 2113 
 Info: SA placement time 0.00s
 Warning: No clocks found in design
 
-Info: Checksum: 0x6b182414
+Info: Checksum: 0x262550f0
 Info: Running post-placement legalisation...
 Info: Routing global clocks...
 Info: Running router2...
 Info: Setting up routing resources...
-Info:     x splitpoint: 11
-Info:     y splitpoint: 128
-Info:         bin 0 N=11
+Info:     x splitpoint: 10
+Info:     y splitpoint: 122
+Info:         bin 0 N=7
 Info:         bin 1 N=1
-Info:         bin 2 N=14
+Info:         bin 2 N=16
 Info:         bin 3 N=2
-Info:         bin 4 N=161
+Info:         bin 4 N=163
 Info: Running main router loop...
-Info:     iter=1 wires=1592 overused=54 overuse=55 archfail=NA
-Info:     iter=2 wires=1626 overused=0 overuse=0 archfail=0
+Info:     iter=1 wires=1630 overused=66 overuse=72 archfail=NA
+Info:     iter=2 wires=1689 overused=0 overuse=0 archfail=0
 Info: 1000 slowest nets by runtime:
-                                                                 $abc$2647$iopadmap$y[2]      1 35.9ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2669.A[6]      4 29.6ms
-                                                                $abc$2647$iopadmap$carry      1 17.9ms
-                                                                 $abc$2647$iopadmap$y[1]      1 16.2ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2670.A[6]      3 10.7ms
-                                                                 $abc$2647$iopadmap$y[5]      1 9.7ms
-                                                                 $abc$2647$iopadmap$y[4]      1 9.5ms
-                                                                 $abc$2647$iopadmap$y[6]      1 7.9ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2648.A[5]     23 7.7ms
-                                                                 $abc$2647$iopadmap$y[3]      1 7.4ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2648.A[7]     16 6.7ms
-                                                                 $abc$2647$iopadmap$zero      1 6.6ms
-                                             $auto$pmux2shiftx.cc:711:execute$1667.A[54]      8 5.1ms
-                                                             $abc$2647$iopadmap$overflow      1 4.7ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2648.A[6]     15 3.5ms
-                                             $auto$pmux2shiftx.cc:711:execute$1667.A[42]      6 3.3ms
-                                             $auto$pmux2shiftx.cc:711:execute$1667.A[44]      6 3.0ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2648.A[3]      4 2.2ms
-                                             $auto$pmux2shiftx.cc:711:execute$1667.A[46]      6 1.9ms
-                                             $auto$pmux2shiftx.cc:711:execute$1667.A[47]      6 1.6ms
-                                             $auto$pmux2shiftx.cc:711:execute$1667.A[45]      6 1.5ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2667.A[3]      6 1.4ms
-                                             $auto$pmux2shiftx.cc:711:execute$1667.A[41]      6 1.3ms
-                                             $auto$pmux2shiftx.cc:711:execute$1667.A[43]      6 1.2ms
-                                              $auto$alumacc.cc:485:replace_alu$1670.X[6]      2 1.2ms
-                        $techmap2705$abc$2647$auto$blifparse.cc:525:parse_blif$2650.A[2]      3 1.1ms
-                        $techmap2702$abc$2647$auto$blifparse.cc:525:parse_blif$2653.A[2]      3 1.1ms
-                        $techmap2699$abc$2647$auto$blifparse.cc:525:parse_blif$2656.A[2]      3 1.1ms
-                        $techmap2696$abc$2647$auto$blifparse.cc:525:parse_blif$2659.A[2]      3 1.0ms
-                        $techmap2692$abc$2647$auto$blifparse.cc:525:parse_blif$2662.A[2]      3 1.0ms
-                                              $auto$alumacc.cc:485:replace_alu$1670.Y[7]      2 1.0ms
-                                              $auto$alumacc.cc:485:replace_alu$1670.X[0]      2 0.9ms
-                        $techmap2710$abc$2647$auto$blifparse.cc:525:parse_blif$2668.A[0]      1 0.9ms
-                                              $auto$alumacc.cc:485:replace_alu$1670.Y[0]      1 0.9ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2669.A[1]      2 0.8ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2670.A[5]      2 0.7ms
-                                              $auto$alumacc.cc:485:replace_alu$1670.X[4]      2 0.7ms
-                                    $auto$pmux2shiftx.cc:711:execute$1667.A[43]$legal$59      1 0.7ms
-                                              $auto$alumacc.cc:485:replace_alu$1673.X[7]      2 0.6ms
-                                              $auto$alumacc.cc:485:replace_alu$1670.X[3]      2 0.6ms
-                                              $auto$alumacc.cc:485:replace_alu$1673.Y[7]      2 0.6ms
-                                              $auto$alumacc.cc:485:replace_alu$1670.X[1]      2 0.6ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2670.A[0]      2 0.6ms
+                                                                 $abc$2647$iopadmap$y[5]      1 23.2ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2669.A[6]      4 19.6ms
+                                                                 $abc$2647$iopadmap$y[2]      1 17.0ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2670.A[6]      3 15.9ms
+                                                                 $abc$2647$iopadmap$y[1]      1 14.5ms
+                                             $auto$pmux2shiftx.cc:711:execute$1667.A[45]      6 14.2ms
+                                                                $abc$2647$iopadmap$carry      1 13.6ms
+                                                                 $abc$2647$iopadmap$zero      1 11.5ms
+                                                                 $abc$2647$iopadmap$y[6]      1 11.0ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2648.A[6]     15 9.5ms
+                                                                 $abc$2647$iopadmap$y[3]      1 8.6ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2648.A[7]     16 7.4ms
+                                                             $abc$2647$iopadmap$overflow      1 6.3ms
+                                                                 $abc$2647$iopadmap$y[4]      1 4.9ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2648.A[5]     23 3.8ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2667.A[3]      6 3.6ms
+                                             $auto$pmux2shiftx.cc:711:execute$1667.A[42]      6 2.8ms
+                                             $auto$pmux2shiftx.cc:711:execute$1667.A[47]      6 2.3ms
+                        $techmap2702$abc$2647$auto$blifparse.cc:525:parse_blif$2653.A[2]      3 2.3ms
+                                             $auto$pmux2shiftx.cc:711:execute$1667.A[41]      6 2.3ms
+                        $techmap2696$abc$2647$auto$blifparse.cc:525:parse_blif$2659.A[2]      3 2.3ms
+                                             $auto$pmux2shiftx.cc:711:execute$1667.A[43]      6 2.2ms
+                                             $auto$pmux2shiftx.cc:711:execute$1667.A[46]      6 2.0ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2670.A[2]      2 1.7ms
+                                             $auto$pmux2shiftx.cc:711:execute$1667.A[44]      6 1.7ms
+                        $techmap2699$abc$2647$auto$blifparse.cc:525:parse_blif$2656.A[2]      3 1.5ms
+                                             $auto$pmux2shiftx.cc:711:execute$1667.A[54]      8 1.4ms
+                                              $auto$alumacc.cc:485:replace_alu$1670.X[5]      2 1.4ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2669.A[4]      2 1.3ms
+                                              $auto$alumacc.cc:485:replace_alu$1673.Y[7]      2 1.3ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2669.A[1]      2 1.2ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2648.A[3]      4 1.2ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2669.A[0]      2 1.2ms
+                                              $auto$alumacc.cc:485:replace_alu$1670.X[6]      2 1.1ms
+                                              $auto$alumacc.cc:485:replace_alu$1670.Y[2]      1 1.1ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2669.A[5]      2 1.1ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2670.A[1]      2 1.1ms
+                                              $auto$alumacc.cc:485:replace_alu$1670.Y[1]      1 1.0ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2670.A[3]      2 1.0ms
+                                              $auto$alumacc.cc:485:replace_alu$1670.X[4]      2 1.0ms
+                                              $auto$alumacc.cc:485:replace_alu$1670.X[1]      2 0.9ms
+                                              $auto$alumacc.cc:485:replace_alu$1670.Y[7]      2 0.9ms
+                                              $auto$alumacc.cc:485:replace_alu$1673.Y[2]      1 0.9ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2669.A[3]      2 0.8ms
+                                              $auto$alumacc.cc:485:replace_alu$1670.X[2]      2 0.8ms
+                                              $auto$alumacc.cc:485:replace_alu$1673.X[7]      2 0.7ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2669.A[2]      2 0.7ms
+                        $techmap2710$abc$2647$auto$blifparse.cc:525:parse_blif$2668.A[1]      1 0.7ms
+                        $techmap2692$abc$2647$auto$blifparse.cc:525:parse_blif$2662.A[2]      3 0.6ms
                                                                          $PACKER_GND_NET     21 0.6ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2669.A[0]      2 0.6ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2670.A[1]      2 0.5ms
-                                              $auto$alumacc.cc:485:replace_alu$1670.X[5]      2 0.5ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2669.A[3]      2 0.4ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2670.A[3]      2 0.4ms
-                                              $auto$alumacc.cc:485:replace_alu$1670.X[2]      2 0.4ms
-                                                                         $PACKER_VCC_NET     27 0.4ms
+                        $techmap2707$abc$2647$auto$blifparse.cc:525:parse_blif$2665.A[2]      3 0.6ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2670.A[0]      2 0.6ms
+                                              $auto$alumacc.cc:485:replace_alu$1670.Y[5]      1 0.5ms
+                                    $auto$pmux2shiftx.cc:711:execute$1667.A[44]$legal$61      1 0.5ms
+                                              $auto$alumacc.cc:485:replace_alu$1670.X[0]      2 0.5ms
+                        $techmap2705$abc$2647$auto$blifparse.cc:525:parse_blif$2650.A[2]      3 0.4ms
+                                              $auto$alumacc.cc:485:replace_alu$1673.Y[6]      1 0.4ms
+                                                                         $PACKER_VCC_NET     29 0.4ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2670.A[5]      2 0.4ms
+                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2670.A[4]      2 0.4ms
+                                                                $PACKER_GND_NET$legal$87      1 0.4ms
                                                                 $PACKER_GND_NET$legal$75      1 0.4ms
-                                              $auto$alumacc.cc:485:replace_alu$1673.Y[3]      1 0.4ms
                                               $auto$alumacc.cc:485:replace_alu$1673.Y[8]      1 0.4ms
-                                                                $PACKER_GND_NET$legal$79      1 0.3ms
-                                              $auto$alumacc.cc:485:replace_alu$1670.Y[5]      1 0.3ms
-                        $techmap2710$abc$2647$auto$blifparse.cc:525:parse_blif$2668.A[1]      1 0.3ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2669.A[4]      2 0.3ms
-                                              $auto$alumacc.cc:485:replace_alu$1673.Y[6]      1 0.3ms
-                                                                $PACKER_GND_NET$legal$53      1 0.3ms
-                        $techmap2707$abc$2647$auto$blifparse.cc:525:parse_blif$2665.A[2]      3 0.3ms
-                                              $auto$alumacc.cc:485:replace_alu$1673.Y[5]      1 0.3ms
-                                              $auto$alumacc.cc:485:replace_alu$1670.Y[2]      1 0.3ms
-                                              $auto$alumacc.cc:485:replace_alu$1673.Y[2]      1 0.3ms
-                                              $auto$alumacc.cc:485:replace_alu$1673.Y[0]      1 0.3ms
+                                                                $PACKER_GND_NET$legal$79      1 0.4ms
+                                              $auto$alumacc.cc:485:replace_alu$1670.Y[6]      1 0.3ms
                                               $auto$alumacc.cc:485:replace_alu$1670.Y[8]      1 0.3ms
-                                                                $PACKER_GND_NET$legal$49      1 0.3ms
+                                              $auto$alumacc.cc:485:replace_alu$1670.X[3]      2 0.3ms
+                                    $auto$pmux2shiftx.cc:711:execute$1667.A[43]$legal$59      1 0.3ms
+                                              $auto$alumacc.cc:485:replace_alu$1673.Y[3]      1 0.3ms
+                                    $auto$pmux2shiftx.cc:711:execute$1667.A[47]$legal$67      1 0.3ms
+                                                                $PACKER_GND_NET$legal$45      1 0.3ms
                                               $auto$alumacc.cc:485:replace_alu$1670.Y[4]      1 0.2ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2670.A[2]      2 0.2ms
-                                              $auto$alumacc.cc:485:replace_alu$1673.Y[1]      1 0.2ms
-                                              $auto$alumacc.cc:485:replace_alu$1670.Y[1]      1 0.2ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2670.A[4]      2 0.2ms
-                                              $auto$alumacc.cc:485:replace_alu$1673.Y[4]      1 0.2ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2669.A[2]      2 0.2ms
-                                                                $PACKER_GND_NET$legal$87      1 0.2ms
-               $techmap2692$abc$2647$auto$blifparse.cc:525:parse_blif$2662.A[2]$legal$31      1 0.2ms
-                                                                $PACKER_GND_NET$legal$45      1 0.2ms
-                                              $auto$alumacc.cc:485:replace_alu$1670.Y[3]      1 0.2ms
-                                    $auto$pmux2shiftx.cc:711:execute$1667.A[47]$legal$67      1 0.2ms
-                                                                $PACKER_GND_NET$legal$83      1 0.2ms
-                                    $abc$2647$auto$blifparse.cc:525:parse_blif$2669.A[5]      2 0.2ms
-                                    $auto$pmux2shiftx.cc:711:execute$1667.A[42]$legal$57      1 0.2ms
-               $techmap2702$abc$2647$auto$blifparse.cc:525:parse_blif$2653.A[2]$legal$19      1 0.2ms
-                           $abc$2647$auto$blifparse.cc:525:parse_blif$2648.A[3]$legal$11      1 0.2ms
-               $techmap2696$abc$2647$auto$blifparse.cc:525:parse_blif$2659.A[2]$legal$27      1 0.2ms
+                                                                $PACKER_GND_NET$legal$49      1 0.2ms
+                                              $auto$alumacc.cc:485:replace_alu$1673.Y[0]      1 0.2ms
                                     $auto$pmux2shiftx.cc:711:execute$1667.A[45]$legal$63      1 0.2ms
-                                    $auto$pmux2shiftx.cc:711:execute$1667.A[54]$legal$71      1 0.2ms
-                                    $auto$pmux2shiftx.cc:711:execute$1667.A[44]$legal$61      1 0.2ms
-               $techmap2705$abc$2647$auto$blifparse.cc:525:parse_blif$2650.A[2]$legal$15      1 0.2ms
-                                              $auto$alumacc.cc:485:replace_alu$1670.Y[6]      1 0.2ms
+                                              $auto$alumacc.cc:485:replace_alu$1670.Y[3]      1 0.2ms
+                                              $auto$alumacc.cc:485:replace_alu$1673.Y[5]      1 0.2ms
+               $techmap2696$abc$2647$auto$blifparse.cc:525:parse_blif$2659.A[2]$legal$27      1 0.2ms
+                        $techmap2710$abc$2647$auto$blifparse.cc:525:parse_blif$2668.A[0]      1 0.2ms
+                                              $auto$alumacc.cc:485:replace_alu$1673.Y[1]      1 0.2ms
                $techmap2699$abc$2647$auto$blifparse.cc:525:parse_blif$2656.A[2]$legal$23      1 0.2ms
-               $techmap2707$abc$2647$auto$blifparse.cc:525:parse_blif$2665.A[2]$legal$35      1 0.2ms
-                           $abc$2647$auto$blifparse.cc:525:parse_blif$2667.A[3]$legal$37      1 0.2ms
                                     $auto$pmux2shiftx.cc:711:execute$1667.A[46]$legal$65      1 0.2ms
-                                                                $PACKER_GND_NET$legal$41      1 0.1ms
+                                                                $PACKER_GND_NET$legal$83      1 0.2ms
+                                              $auto$alumacc.cc:485:replace_alu$1670.Y[0]      1 0.2ms
+               $techmap2702$abc$2647$auto$blifparse.cc:525:parse_blif$2653.A[2]$legal$19      1 0.2ms
+                                                                $PACKER_GND_NET$legal$41      1 0.2ms
+                                    $auto$pmux2shiftx.cc:711:execute$1667.A[42]$legal$57      1 0.2ms
+                                                                $PACKER_GND_NET$legal$53      1 0.2ms
+               $techmap2707$abc$2647$auto$blifparse.cc:525:parse_blif$2665.A[2]$legal$35      1 0.2ms
+                                              $auto$alumacc.cc:485:replace_alu$1673.Y[4]      1 0.2ms
+                           $abc$2647$auto$blifparse.cc:525:parse_blif$2648.A[3]$legal$11      1 0.2ms
+               $techmap2692$abc$2647$auto$blifparse.cc:525:parse_blif$2662.A[2]$legal$31      1 0.2ms
+                                    $auto$pmux2shiftx.cc:711:execute$1667.A[54]$legal$71      1 0.2ms
+                           $abc$2647$auto$blifparse.cc:525:parse_blif$2667.A[3]$legal$37      1 0.2ms
+               $techmap2705$abc$2647$auto$blifparse.cc:525:parse_blif$2650.A[2]$legal$15      1 0.1ms
+                                             $auto$alumacc.cc:485:replace_alu$1670.CO[7]      1 0.0ms
                                              $auto$alumacc.cc:485:replace_alu$1673.CO[7]      1 0.0ms
                                              $auto$alumacc.cc:485:replace_alu$1670.CO[3]      1 0.0ms
                                              $auto$alumacc.cc:485:replace_alu$1673.CO[3]      1 0.0ms
-                                             $auto$alumacc.cc:485:replace_alu$1670.CO[7]      1 0.0ms
-                                                                $PACKER_GND_NET$legal$73      1 0.0ms
-                                     $auto$alumacc.cc:485:replace_alu$1673.X[7]$legal$69      1 0.0ms
                                     $auto$pmux2shiftx.cc:711:execute$1667.A[41]$legal$55      1 0.0ms
-                                                                $PACKER_GND_NET$legal$43      1 0.0ms
-                                                                                    y[2]      1 0.0ms
-                                                                                    y[1]      1 0.0ms
+                                      $auto$alumacc.cc:485:replace_alu$1670.X[0]$legal$9      1 0.0ms
+                                                                                    y[6]      1 0.0ms
+                                                                                    y[5]      1 0.0ms
                                                                                     y[0]      1 0.0ms
-                                              $auto$alumacc.cc:485:replace_alu$1673.X[2]      1 0.0ms
-        $abc$2647$auto$blifparse.cc:525:parse_blif$2667.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.f0      1 0.0ms
+        $abc$2647$auto$blifparse.cc:525:parse_blif$2667.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.lut0.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.f1      1 0.0ms
+                                                                                    zero      1 0.0ms
                                                                                 negative      1 0.0ms
+                                                                                   carry      1 0.0ms
                                                                 $PACKER_GND_NET$legal$85      1 0.0ms
                                                                 $PACKER_GND_NET$legal$81      1 0.0ms
                                                                 $PACKER_GND_NET$legal$77      1 0.0ms
+                                                                $PACKER_GND_NET$legal$73      1 0.0ms
+                                     $auto$alumacc.cc:485:replace_alu$1673.X[7]$legal$69      1 0.0ms
                                                                 $PACKER_GND_NET$legal$51      1 0.0ms
                                                                 $PACKER_GND_NET$legal$47      1 0.0ms
+                                                                $PACKER_GND_NET$legal$43      1 0.0ms
                                                                 $PACKER_GND_NET$legal$39      1 0.0ms
                                      $auto$alumacc.cc:485:replace_alu$1670.X[6]$legal$33      1 0.0ms
                                      $auto$alumacc.cc:485:replace_alu$1670.X[5]$legal$29      1 0.0ms
@@ -387,16 +392,15 @@ Info: 1000 slowest nets by runtime:
                                      $auto$alumacc.cc:485:replace_alu$1670.X[3]$legal$21      1 0.0ms
                                      $auto$alumacc.cc:485:replace_alu$1670.X[2]$legal$17      1 0.0ms
                                      $auto$alumacc.cc:485:replace_alu$1670.X[1]$legal$13      1 0.0ms
-                                      $auto$alumacc.cc:485:replace_alu$1670.X[0]$legal$9      1 0.0ms
                                                                  $PACKER_GND_NET$legal$7      1 0.0ms
                                                                  $PACKER_GND_NET$legal$5      1 0.0ms
                                                                  $PACKER_GND_NET$legal$3      1 0.0ms
                                                                  $PACKER_GND_NET$legal$1      1 0.0ms
                                                                                     y[7]      1 0.0ms
-                                                                                    y[6]      1 0.0ms
-                                                                                    y[5]      1 0.0ms
                                                                                     y[4]      1 0.0ms
                                                                                     y[3]      1 0.0ms
+                                                                                    y[2]      1 0.0ms
+                                                                                    y[1]      1 0.0ms
                                                                                    op[2]      2 0.0ms
                                                                                    op[1]      2 0.0ms
                                                                                    op[0]      2 0.0ms
@@ -428,6 +432,7 @@ Info: 1000 slowest nets by runtime:
                                               $auto$alumacc.cc:485:replace_alu$1673.X[5]      1 0.0ms
                                               $auto$alumacc.cc:485:replace_alu$1673.X[4]      1 0.0ms
                                               $auto$alumacc.cc:485:replace_alu$1673.X[3]      1 0.0ms
+                                              $auto$alumacc.cc:485:replace_alu$1673.X[2]      1 0.0ms
                                               $auto$alumacc.cc:485:replace_alu$1673.X[1]      1 0.0ms
                                               $auto$alumacc.cc:485:replace_alu$1673.X[0]      1 0.0ms
                                               $auto$alumacc.cc:485:replace_alu$1670.X[7]      1 0.0ms
@@ -444,7 +449,7 @@ Info: 1000 slowest nets by runtime:
         $abc$2647$auto$blifparse.cc:525:parse_blif$2667.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.f1      1 0.0ms
         $abc$2647$auto$blifparse.cc:525:parse_blif$2667.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.lut1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.f1      1 0.0ms
         $abc$2647$auto$blifparse.cc:525:parse_blif$2667.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.lut1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.f0      1 0.0ms
-        $abc$2647$auto$blifparse.cc:525:parse_blif$2667.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.lut0.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.f1      1 0.0ms
+        $abc$2647$auto$blifparse.cc:525:parse_blif$2667.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.f0      1 0.0ms
         $abc$2647$auto$blifparse.cc:525:parse_blif$2667.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.lut0.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.f0      1 0.0ms
         $abc$2647$auto$blifparse.cc:525:parse_blif$2648.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.f1      1 0.0ms
         $abc$2647$auto$blifparse.cc:525:parse_blif$2648.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.lut1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.f1      1 0.0ms
@@ -452,10 +457,8 @@ Info: 1000 slowest nets by runtime:
         $abc$2647$auto$blifparse.cc:525:parse_blif$2648.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.f0      1 0.0ms
         $abc$2647$auto$blifparse.cc:525:parse_blif$2648.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.lut0.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.f1      1 0.0ms
         $abc$2647$auto$blifparse.cc:525:parse_blif$2648.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.lut0.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.genblk1.f0      1 0.0ms
-                                                                                    zero      1 0.0ms
                                                                                 overflow      1 0.0ms
-                                                                                   carry      1 0.0ms
-Info: Router2 time 1.41s
+Info: Router2 time 1.36s
 Info: Running router1 to check that route is legal...
 
 Info: Routing..
@@ -466,7 +469,7 @@ Info:    IterCnt |  w/ripup   wo/ripup |  w/r  wo/r |      arcs| batch(sec) tota
 Info:          0 |        0          0 |    0     0 |         0|       0.00       0.00|
 Info: Routing complete.
 Info: Router1 time 0.00s
-Info: Checksum: 0xe7de4cb3
+Info: Checksum: 0x8a90f8ee
 Warning: No clocks found in design
 
 Info: Running post-routing legalisation...

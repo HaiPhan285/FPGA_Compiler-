@@ -19,7 +19,7 @@ fi
 PROJECT="test"
 TOP=""
 CONSTRAINTS=""
-BUILD_DIR="build"
+BUILD_DIR=""
 SOURCE_DIR="."
 SV_FILE=""
 BUILD_ALL=false
@@ -302,9 +302,24 @@ echo "✓ prjxray tools found"
 
 # Clean and create build directory
 echo -e "${YELLOW}Cleaning previous build...${NC}"
-rm -rf ${BUILD_DIR}
+# Use a temporary directory for build artifacts to keep project folder clean
+BUILD_DIR=$(mktemp -d)
+echo "Build artifacts will be stored in temporary directory: $BUILD_DIR"
+
+# Function to cleanup on exit
+cleanup() {
+    EXIT_CODE=$?
+    if [ $EXIT_CODE -eq 0 ]; then
+        echo "Removing temporary build directory..."
+        rm -rf "$BUILD_DIR"
+    else
+        echo "Build failed. Artifacts preserved in $BUILD_DIR for debugging."
+    fi
+    exit $EXIT_CODE
+}
+trap cleanup EXIT
+
 rm -f ${PROJECT}.bit
-mkdir -p ${BUILD_DIR}
 
 # Find all .sv and .v files
 SV_FILES=$(ls -1 *.sv 2>/dev/null | tr '\n' ' ')

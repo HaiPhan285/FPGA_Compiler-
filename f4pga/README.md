@@ -14,8 +14,7 @@ The flow replaces proprietary vendor tools with a fully open-source stack consis
 
 ```
 f4pga/
-├── prjxray/                # Submodule or cloned prjxray repo
-├── prjxray-db/             # Database for Xilinx 7-series
+├── .tools/                 # Hidden toolchain (prjxray, db, env) - DO NOT TOUCH
 ├── prjxray-env.sh          # Environment variables script
 ├── setup-prjxray.sh        # Installation script
 └── fpga-project/           # Project directory
@@ -31,7 +30,7 @@ f4pga/
 You need a Linux environment (Ubuntu/Debian recommended or WSL2).
 
 ### Step 1: Install Dependencies
-Run the setup script to install system dependencies, Python packages, and download the device database.
+Run the setup script once. This handles everything and hides the heavy tools in `.tools/` to keep your workspace clean.
 
 ```bash
 # From f4pga/ directory
@@ -39,10 +38,10 @@ Run the setup script to install system dependencies, Python packages, and downlo
 ```
 
 This script will:
-- Install packages like `yosys`, `git`, `python3`, etc.
-- Clone `prjxray`.
-- Create a Python virtual environment.
-- Download the Artix-7 database.
+- Install system packages.
+- Clone `prjxray` into the hidden `.tools/` directory.
+- Create a Python virtual environment in `.tools/env`.
+- Download the database to `.tools/prjxray-db`.
 
 ### Step 2: Install Nextpnr-Xilinx & OpenFPGALoader
 The place-and-route tool and programmer must be installed.
@@ -62,25 +61,32 @@ wget https://github.com/openXC7/nextpnr-xilinx/releases/download/release-0.5.0/c
 
 ## 4. Building a Project
 
-### Step 1: Load Environment
-**Always** source the environment script before building. This sets up paths for `fasm2frames` and other tools.
+### How to Create a New Project
+1.  Go to the `app` folder: `cd fpga-project/app`
+2.  Create a folder: `mkdir my_project`
+3.  Add your files inside: `my_design.sv` and `constraints.xdc`
 
-```bash
-source prjxray-env.sh
-```
+### How to Run (Build & Program)
+We use a **clean build** process. No `build/` folders will clutter your project.
 
-### Step 2: Run Build Script
-Navigate to the project folder and run the build script.
+1.  **Navigate to the project root:**
+    ```bash
+    cd fpga-project
+    ```
 
-```bash
-cd fpga-project
-./build.sh --source-dir app/project1 --top main --project run --constraints main.xdc
-```
+2.  **Run the build script:**
+    ```bash
+    ./build.sh
+    ```
+    *   Select your project from the list.
+    *   It will build in a **temporary folder** (automatically deleted on success).
+    *   If successful, it generates `my_project.bit` in your folder.
 
-**VSCode Shortcuts (Ctrl+Shift+P):**
-- `FPGA: Build`
-- `FPGA: Program`
-- `FPGA: Build & Program`
+3.  **Flash to Board (Fast):**
+    If you already built and just want to upload again:
+    ```bash
+    ./build.sh --flash
+    ```
 
 ### Troubleshooting Common Errors
 
@@ -89,14 +95,21 @@ cd fpga-project
     - Run the `wget` command in "Step 2" above to re-download it.
 
 2.  **"python3: can't open file ... fasm2frames"**:
-    - `prjxray-env.sh` was not sourced, or `prjxray` directory is missing.
+    - `prjxray-env.sh` was not sourced (the build script usually handles this).
     - Ensure `./setup-prjxray.sh` ran successfully.
-    - **Run `source ../prjxray-env.sh`** before building.
 
-3.  **"Unable to import fast Antlr4 parser"**:
-    - This is a warning, not an error. The build will proceed using the slower Python parser.
+3.  **Build Fails?**
+    - The script will preserve the temporary build folder and tell you its path.
+    - Go there to check `yosys.log` or `nextpnr.log` for error details.
 
 ## 5. Programming the FPGA
+
+This project uses **OpenFPGALoader** because it natively supports the Nexys A7's built-in USB-JTAG interface (FTDI chip). You do **NOT** need an external programmer (like STLink) or complex tools (like OpenOCD) for standard bitstream loading.
+
+### Why not OpenOCD or STLink?
+- **STLink**: Typically for STM32 microcontrollers. Not used for Nexys A7.
+- **OpenOCD**: Powerful but harder to configure. OpenFPGALoader is faster and easier for this board.
+- **Vivado Hardware Manager**: Proprietary and huge. We are using a fully open-source flow.
 
 ### 1. Verify Device Connection
 First, check if your FPGA is detected:
