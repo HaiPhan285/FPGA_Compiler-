@@ -1,0 +1,2 @@
+[console_scripts]
+sdf_timing_parse = sdf_timing.sdfparse:main
