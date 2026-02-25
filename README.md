@@ -64,7 +64,25 @@ wget https://github.com/openXC7/nextpnr-xilinx/releases/download/release-0.5.0/c
 ### How to Create a New Project
 1.  Go to the `app` folder: `cd fpga-project/app`
 2.  Create a folder: `mkdir my_project`
-3.  Add your files inside: `my_design.sv` and `constraints.xdc`
+3.  Add your Verilog source file (e.g., `my_design.v`) with a valid `module` declaration.
+4.  Add a constraints file (e.g., `my_design.xdc`) with pin assignments.
+
+**Important rules for new projects:**
+-   **Do not leave files empty.** The build script will reject empty `.v` and `.xdc` files.
+-   **Avoid Verilog reserved words as module names** (e.g., `xor`, `and`, `or`, `nor`, `nand`). Use names like `xor_gate`, `and_gate` instead.
+-   **No spaces inside braces in XDC files.** `nextpnr-xilinx` will crash on `{ a }` — use `{a}` instead.
+    ```
+    # ✗ Wrong — causes assertion failure in nextpnr:
+    set_property -dict { PACKAGE_PIN J15  IOSTANDARD LVCMOS33 } [get_ports { a }]
+
+    # ✓ Correct:
+    set_property -dict {PACKAGE_PIN J15 IOSTANDARD LVCMOS33} [get_ports {a}]
+    # or:
+    set_property PACKAGE_PIN J15 [get_ports {a}]
+    set_property IOSTANDARD LVCMOS33 [get_ports {a}]
+    ```
+-   **The build script auto-detects the module name** from your Verilog source, so the filename does not need to match the module name.
+-   **Helper files** (like `gates.v`) are automatically excluded from the top-module selection menu.
 
 ### How to Run (Build & Program)
 We use a **clean build** process. No `build/` folders will clutter your project.
@@ -90,15 +108,30 @@ We use a **clean build** process. No `build/` folders will clutter your project.
 
 ### Troubleshooting Common Errors
 
-1.  **"Unable to read chipdb"**:
+1.  **"Module `xor' not found!"** (or similar reserved word):
+    - Your module name is a Verilog reserved keyword. Rename it (e.g., `xor` → `xor_gate`).
+
+2.  **"Assertion failure: str.back() == '}'"** in nextpnr:
+    - Your XDC file has spaces inside braces. Change `{ a }` to `{a}` and `{ PACKAGE_PIN ... }` to `{PACKAGE_PIN ...}`.
+
+3.  **"All .sv/.v files are empty"** or **"No module declaration found"**:
+    - Your Verilog source file is empty or missing a `module` declaration. Add your design code.
+
+4.  **"port ... has no IOSTANDARD property"**:
+    - Your XDC constraints are missing `IOSTANDARD` for one or more ports. Every port needs both `PACKAGE_PIN` and `IOSTANDARD`.
+
+5.  **"Module `\xxx' referenced ... is not part of the design"**:
+    - A submodule is missing. Make sure all instantiated modules have their source files in the project folder.
+
+6.  **"Unable to read chipdb"**:
     - The chip database file is missing or corrupted.
     - Run the `wget` command in "Step 2" above to re-download it.
 
-2.  **"python3: can't open file ... fasm2frames"**:
+7.  **"python3: can't open file ... fasm2frames"**:
     - `prjxray-env.sh` was not sourced (the build script usually handles this).
     - Ensure `./setup-prjxray.sh` ran successfully.
 
-3.  **Build Fails?**
+8.  **Build Fails?**
     - The script will preserve the temporary build folder and tell you its path.
     - Go there to check `yosys.log` or `nextpnr.log` for error details.
 

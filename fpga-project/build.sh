@@ -49,22 +49,110 @@ if [[ $# -eq 0 ]]; then
         SOURCE_DIR="$SELECTED_DIR"
         PROJECT=$(basename "$SELECTED_DIR")
 
-        # Auto-detect top module (first .sv/.v that isn't test)
-        for f in "$SELECTED_DIR"*.sv "$SELECTED_DIR"*.v; do
-            [ -f "$f" ] || continue
-            base=$(basename "$f" .sv); base=$(basename "$base" .v)
-            [[ "$base" == "test" ]] && continue
-            TOP="$base"; break
-        done
-        if [ -z "$TOP" ]; then echo "No .sv/.v files found in $PROJECT"; exit 1; fi
-
-        # Auto-detect constraints (matching name or first .xdc)
-        if [ -f "${SELECTED_DIR}${TOP}.xdc" ]; then
-            CONSTRAINTS="${TOP}.xdc"
-        else
-            CONSTRAINTS=$(find "$SELECTED_DIR" -maxdepth 1 -name "*.xdc" | sort | head -1 | xargs basename 2>/dev/null)
+        # Find all potential top modules (Verilog files)
+        # Exclude common non-top files like gates.v, defines.v, etc.
+        mapfile -t SRC_FILES < <(find "$SELECTED_DIR" -maxdepth 1 \( -name "*.sv" -o -name "*.v" \) ! -name "gates.v" ! -name "defines.v" ! -name "params.v" | sort)
+        
+        if [ ${#SRC_FILES[@]} -eq 0 ]; then
+             # If filtered list is empty, fall back to all files
+             mapfile -t SRC_FILES < <(find "$SELECTED_DIR" -maxdepth 1 \( -name "*.sv" -o -name "*.v" \) | sort)
         fi
-        if [ -z "$CONSTRAINTS" ]; then echo "No .xdc file found in $PROJECT"; exit 1; fi
+
+        # Filter out empty source files
+        NON_EMPTY_SRC=()
+        for src in "${SRC_FILES[@]}"; do
+            if [ -s "$src" ]; then
+                NON_EMPTY_SRC+=("$src")
+            fi
+        done
+        if [ ${#NON_EMPTY_SRC[@]} -eq 0 ] && [ ${#SRC_FILES[@]} -gt 0 ]; then
+            echo -e "\033[0;31mError: All .sv/.v files in $PROJECT are empty. Please add your Verilog design before building.\033[0m"
+            exit 1
+        fi
+        SRC_FILES=("${NON_EMPTY_SRC[@]}")
+
+        if [ ${#SRC_FILES[@]} -eq 0 ]; then
+             echo "No .sv/.v files found in $PROJECT"
+             exit 1
+        fi
+
+        # If multiple files exist, ask the user to pick the top module file
+        if [ ${#SRC_FILES[@]} -gt 1 ]; then
+            echo "Multiple source files found. Select the top module file:"
+            for i in "${!SRC_FILES[@]}"; do
+                echo "  [$((i+1))] $(basename "${SRC_FILES[$i]}")"
+            done
+            read -rp "Enter number (default 1): " SRC_CHOICE
+            
+            if [[ -z "$SRC_CHOICE" ]]; then
+                SRC_CHOICE=1
+            fi
+            
+            if [[ "$SRC_CHOICE" =~ ^[0-9]+$ ]] && [ "$SRC_CHOICE" -ge 1 ] && [ "$SRC_CHOICE" -le ${#SRC_FILES[@]} ]; then
+                SELECTED_SRC="${SRC_FILES[$((SRC_CHOICE-1))]}"
+            else
+                echo "Invalid selection."
+                exit 1
+            fi
+        else
+            # Only one file, use it
+            SELECTED_SRC="${SRC_FILES[0]}"
+        fi
+
+        # Auto-detect top module name from the file content
+        DETECTED_MODULE=$(grep -oP '^\s*module\s+\K[a-zA-Z_][a-zA-Z0-9_]*' "$SELECTED_SRC" | head -1)
+        if [ -n "$DETECTED_MODULE" ]; then
+            TOP="$DETECTED_MODULE"
+        else
+            if [ ! -s "$SELECTED_SRC" ]; then
+                echo -e "\033[0;31mError: $(basename "$SELECTED_SRC") is empty. Please add your Verilog design before building.\033[0m"
+            else
+                echo -e "\033[0;31mError: No 'module' declaration found in $(basename "$SELECTED_SRC"). Please check your Verilog syntax.\033[0m"
+            fi
+            exit 1
+        fi
+
+        # Check that the constraints file has content
+        mapfile -t XDC_FILES < <(find "$SELECTED_DIR" -maxdepth 1 -name "*.xdc" | sort)
+        # Filter out empty XDC files
+        NON_EMPTY_XDC=()
+        for xdc in "${XDC_FILES[@]}"; do
+            if [ -s "$xdc" ]; then
+                NON_EMPTY_XDC+=("$xdc")
+            fi
+        done
+        if [ ${#NON_EMPTY_XDC[@]} -eq 0 ] && [ ${#XDC_FILES[@]} -gt 0 ]; then
+            echo -e "\033[0;31mError: All .xdc files in $PROJECT are empty. Please add pin constraints before building.\033[0m"
+            exit 1
+        fi
+        XDC_FILES=("${NON_EMPTY_XDC[@]}")
+        
+        if [ ${#XDC_FILES[@]} -eq 0 ]; then
+             echo "No .xdc file found in $PROJECT"
+             exit 1
+        fi
+
+        # If multiple XDC files exist, ask the user to pick one
+        if [ ${#XDC_FILES[@]} -gt 1 ]; then
+            echo "Multiple constraints files found. Select the XDC file:"
+            for i in "${!XDC_FILES[@]}"; do
+                echo "  [$((i+1))] $(basename "${XDC_FILES[$i]}")"
+            done
+            read -rp "Enter number (default 1): " XDC_CHOICE
+            
+            if [[ -z "$XDC_CHOICE" ]]; then
+                XDC_CHOICE=1
+            fi
+            
+            if [[ "$XDC_CHOICE" =~ ^[0-9]+$ ]] && [ "$XDC_CHOICE" -ge 1 ] && [ "$XDC_CHOICE" -le ${#XDC_FILES[@]} ]; then
+                CONSTRAINTS=$(basename "${XDC_FILES[$((XDC_CHOICE-1))]}")
+            else
+                echo "Invalid selection."
+                exit 1
+            fi
+        else
+            CONSTRAINTS=$(basename "${XDC_FILES[0]}")
+        fi
 
         echo ""
         echo "  Design file : ${TOP}.sv / ${TOP}.v"
@@ -191,6 +279,7 @@ if [ "$BUILD_ALL" = true ]; then
 
         echo "  Top module : $detected_top"
         echo "  Constraints: $detected_xdc"
+        echo "  Project    : $proj_name"
 
         if "$BUILD_SCRIPT_DIR/build.sh" \
             --source-dir "$proj_dir" \
@@ -343,9 +432,14 @@ fi
 if [ -n "$V_FILES" ]; then
     YOSYS_CMD="${YOSYS_CMD}read_verilog ${V_FILES}; "
 fi
-YOSYS_CMD="${YOSYS_CMD}hierarchy -check -top ${TOP}; synth_xilinx -family xc7 -top ${TOP}; write_json ${BUILD_DIR}/${PROJECT}.json"
+YOSYS_CMD="${YOSYS_CMD}hierarchy -check -top ${TOP}; synth_xilinx -family xc7 -top ${TOP}; write_json \"${BUILD_DIR}/${PROJECT}.json\""
 
 yosys -p "${YOSYS_CMD}" 2>&1 | tee ${BUILD_DIR}/yosys.log
+
+if [ ! -f "${BUILD_DIR}/${PROJECT}.json" ]; then
+    echo -e "${RED}Error: Synthesis failed. Check yosys.log for details.${NC}"
+    exit 1
+fi
 
 echo ""
 echo -e "${YELLOW}Step 2: Place and Route with nextpnr-xilinx${NC}"
@@ -390,9 +484,14 @@ nextpnr-xilinx \
     --fasm "${BUILD_DIR}/${PROJECT}.fasm" \
     --verbose 2>&1 | tee ${BUILD_DIR}/nextpnr.log
 
+if [ ! -f "${BUILD_DIR}/${PROJECT}.fasm" ]; then
+    echo -e "${RED}Error: Place and route failed. Check nextpnr.log for details.${NC}"
+    exit 1
+fi
+
 echo ""
 echo -e "${YELLOW}Step 3: Generate FASM to Frames${NC}"
-python3 ${XRAY_FASM2FRAMES} --db-root ${XRAY_DATABASE_DIR}/${XRAY_DATABASE} --part ${PART} ${BUILD_DIR}/${PROJECT}.fasm ${BUILD_DIR}/${PROJECT}.frames
+python3 ${XRAY_FASM2FRAMES} --db-root ${XRAY_DATABASE_DIR}/${XRAY_DATABASE} --part ${PART} "${BUILD_DIR}/${PROJECT}.fasm" "${BUILD_DIR}/${PROJECT}.frames"
 
 echo ""
 echo -e "${YELLOW}Step 4: Generate Bitstream${NC}"

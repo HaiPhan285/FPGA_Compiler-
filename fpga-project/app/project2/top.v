@@ -1,6 +1,6 @@
 `timescale 1ns / 1ps
 
-module top_fpga (
+module top (
     input  wire [18:0] SW,       // switches
     output wire [3:0]  LED,      // flag LEDs
     output wire [6:0]  HEX0,     // lower hex digit (7-seg)
