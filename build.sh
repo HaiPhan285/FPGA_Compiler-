@@ -410,9 +410,9 @@ trap cleanup EXIT
 
 rm -f ${PROJECT}.bit
 
-# Find all .sv and .v files
-SV_FILES=$(ls -1 *.sv 2>/dev/null | tr '\n' ' ')
-V_FILES=$(ls -1 *.v 2>/dev/null | tr '\n' ' ')
+# Find all .sv and .v files, excluding testbench/simulation files
+SV_FILES=$(ls -1 *.sv 2>/dev/null | grep -v -E '^(tb_.*|sim\.sv)$' | tr '\n' ' ')
+V_FILES=$(ls -1 *.v 2>/dev/null | grep -v -E '^(tb_.*|sim\.v)$' | tr '\n' ' ')
 ALL_FILES="${SV_FILES}${V_FILES}"
 if [ -z "$ALL_FILES" ]; then
     echo -e "${RED}Error: No .sv or .v files found in current directory.${NC}"
