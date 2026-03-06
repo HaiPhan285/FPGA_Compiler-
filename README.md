@@ -2,183 +2,275 @@
 
 An open-source FPGA build system for the **Nexys A7-100T (XC7A100T-CSG324)**. No Vivado required.
 
-## What This Does
-
 Takes your Verilog/SystemVerilog design and produces a `.bit` file you can flash to the board — using only free, open-source tools:
 
 | Step | Tool | What it does |
 |------|------|-------------|
-| Synthesis | **Yosys** | Verilog → Netlist (maps to LUTs, FFs, etc.) |
-| Place & Route | **Nextpnr-Xilinx** | Netlist → FASM (places and connects everything) |
-| Bitstream | **Project X-Ray** | FASM → `.bit` file (via `fasm2frames` + `xc7frames2bit`) |
-| Program | **OpenFPGALoader** | Flashes `.bit` to the FPGA over USB-JTAG |
+| Synthesis | **Yosys** | Verilog → Netlist |
+| Place & Route | **nextpnr-xilinx** | Netlist → FASM |
+| Bitstream | **Project X-Ray** | FASM → `.bit` file |
+| Program | **OpenFPGALoader** | Flashes `.bit` to FPGA over USB-JTAG |
 
-## Directory Structure
+---
+
+## Repository layout
 
 ```
 FPGA_Compiler-/
-├── setup-prjxray.sh        # One-time setup script (run this first)
-├── prjxray-env.sh          # Environment config (sourced automatically by build.sh)
-├── .tools/                 # Toolchain internals (auto-populated by setup) — DO NOT EDIT
-│   ├── prjxray/            # Project X-Ray (cloned from f4pga/prjxray)
-│   ├── prjxray-db/         # FPGA tile database (cloned from f4pga/prjxray-db)
-│   └── env/                # Python virtual environment
-└── fpga-project/
-    ├── build.sh            # Main build script
-    └── app/                # Your designs go here
-        ├── project1/       #   Each folder = one project
-        │   ├── main.sv     #     Verilog/SystemVerilog source(s)
-        │   └── main.xdc    #     Pin constraints
-        ├── project2/
-        └── project3/
+├── setup.sh          ← run this once after cloning
+├── prjxray-env.sh    ← auto-sourced by build.sh
+├── build.sh          ← interactive build menu
+├── app/              ← your designs live here
+│   ├── project1/     ←   each sub-folder is one project
+│   ├── project2/
+│   ├── project3/
+│   └── project5/
+└── .tools/           ← auto-populated by setup.sh (gitignored)
 ```
 
-## Quick Start
+---
 
-### 1. Prerequisites
+## Quick start
 
-You need **Linux** (Ubuntu/Debian) or **WSL2** on Windows.
+### 1 — Requirements
 
-Install these system tools first:
+You need **Linux** (Ubuntu 22.04 / 24.04 recommended) or **WSL2** on Windows.
+
+#### 1a. Base build tools
 
 ```bash
 sudo apt-get update
 sudo apt-get install -y \
-    build-essential cmake python3 python3-pip python3-venv git \
-    libboost-all-dev libyaml-cpp-dev libffi-dev libssl-dev \
-    yosys nextpnr-xilinx openFPGALoader
+    build-essential cmake make git wget curl \
+    python3 python3-pip python3-venv \
+    libffi-dev libssl-dev \
+    libboost-all-dev libyaml-cpp-dev \
+    flex bison clang-format \
+    libftdi1-2 libhidapi-hidraw0 libusb-1.0-0
 ```
 
-### 2. Run Setup
-
-From the repository root:
+#### 1b. Yosys (synthesis)
 
 ```bash
-./setup-prjxray.sh
+sudo apt-get install -y yosys
 ```
 
-This will:
-- Clone **prjxray** and build its C++ tools (`xc7frames2bit`, etc.)
-- Clone the **prjxray-db** database for the Artix-7
-- Create a Python virtual environment and install dependencies
-- Download the **chipdb** for nextpnr-xilinx
+Verify: `yosys --version`
 
-> **Note:** If the setup fails partway through (e.g., network issue), the `.tools/prjxray/` directory may exist but be empty or incomplete. Delete it and re-run:
+#### 1c. nextpnr-xilinx (place-and-route)
+
+nextpnr-xilinx is **not** in the default Ubuntu repos. Try apt first; if that fails, grab the pre-built binary from the [openXC7 releases page](https://github.com/openXC7/nextpnr-xilinx/releases):
+
+```bash
+# Option A — apt (works if your distro ships it)
+sudo apt-get install -y nextpnr-xilinx
+
+# Option B — download pre-built binary
+sudo wget -O /usr/local/bin/nextpnr-xilinx \
+    https://github.com/openXC7/nextpnr-xilinx/releases/download/release-0.5.0/nextpnr-xilinx
+sudo chmod +x /usr/local/bin/nextpnr-xilinx
+```
+
+Verify: `nextpnr-xilinx --version`
+
+#### 1d. OpenFPGALoader (flashing — skip if you only want to build)
+
+```bash
+sudo apt-get install -y openfpgaloader
+```
+
+If not available in apt, build from source: <https://github.com/trabucayre/openFPGALoader>
+
+---
+
+### 2 — Clone the repository
+
+```bash
+git clone https://github.com/HaiPhan285/FPGA_Compiler-.git
+cd FPGA_Compiler-
+```
+
+---
+
+### 3 — Run setup (one time only)
+
+```bash
+chmod +x setup.sh
+./setup.sh
+```
+
+`setup.sh` does the following automatically:
+
+1. Installs any missing system packages
+2. Clones **prjxray** and builds its C++ tools (`xc7frames2bit`, `bitread`, …)
+3. Clones the **prjxray-db** Artix-7 tile database
+4. Creates a Python virtual environment (`.tools/env`) and installs Python deps
+5. Downloads the **chipdb** for nextpnr-xilinx (`~/.local/share/nextpnr/xilinx/`)
+
+> **If setup fails partway through** (network issue, etc.), just delete the incomplete directory and re-run:
 > ```bash
-> rm -rf .tools/prjxray
-> ./setup-prjxray.sh
+> rm -rf .tools/prjxray   # or .tools/prjxray-db
+> ./setup.sh
 > ```
 
-### 3. Download Chipdb (if not done by setup)
+---
 
-Nextpnr-Xilinx needs a chip database file. If the setup script didn't download it, do it manually:
-
-```bash
-mkdir -p ~/.local/share/nextpnr/xilinx
-wget -O ~/.local/share/nextpnr/xilinx/chipdb-xc7a100t.bin \
-    https://github.com/openXC7/nextpnr-xilinx/releases/download/release-0.5.0/chipdb-xc7a100t.bin
-```
-
-### 4. Build a Project
+### 4 — Build a project
 
 ```bash
-cd fpga-project
 ./build.sh
 ```
 
-You'll see an interactive menu:
+You will see an interactive menu:
+
 ```
 === Select a project ===
   [1] project1
   [2] project2
   [3] project3
+  [4] project5
   [a] Build all
 Enter number:
 ```
 
-Pick a project. If it has multiple source files, you'll be asked which one is the top module. The build runs in a temporary directory and produces a `.bit` file in your project folder.
+Select a project number. If the folder has multiple source files, you will be asked to pick the **top module** file. The script auto-detects the module name, runs synthesis → place-and-route → bitstream generation, and writes `<project_name>.bit` into the project folder.
 
-#### CLI Options
-
-You can also skip the interactive menu:
+#### CLI options (skip the menu)
 
 ```bash
-./build.sh --project myproj --top top --constraints top.xdc --source-dir app/project3
-./build.sh --all          # Build every project in app/
-./build.sh --flash        # Pick a built project and flash it to the board
+# Build a specific project
+./build.sh --project project5 --top and_gate --constraints and_gate.xdc --source-dir app/project5
+
+# Build all projects
+./build.sh --all
+
+# Flash a previously built bitstream
+./build.sh --flash
 ```
 
-## Creating a New Project
+---
 
-1. Create a folder under `fpga-project/app/`:
-   ```bash
-   mkdir fpga-project/app/my_project
-   ```
+### 5 — Flash to the FPGA
 
-2. Add your **Verilog source** (`.v` or `.sv`) with a `module` declaration.
+Connect the Nexys A7 via USB, then:
 
-3. Add a **constraints file** (`.xdc`) with pin and I/O standard assignments.
+```bash
+./build.sh --flash
+```
 
-4. Run `./build.sh` and select your project.
+Or flash a specific `.bit` directly:
 
-### Rules to Follow
+```bash
+openFPGALoader -b nexys_a7_100 app/project5/project5.bit
+```
 
-- **Don't leave files empty** — the build script rejects empty `.v`/`.sv` and `.xdc` files.
-- **Don't use Verilog reserved words as module names** (`xor`, `and`, `or`, etc.). Use `xor_gate`, `and_gate` instead.
-- **No spaces inside braces in XDC files** — `nextpnr-xilinx` crashes on `{ a }`. Use `{a}`:
-  ```tcl
-  # ✗ WRONG — causes assertion failure:
-  set_property -dict { PACKAGE_PIN J15  IOSTANDARD LVCMOS33 } [get_ports { a }]
-
-  # ✓ CORRECT:
-  set_property -dict {PACKAGE_PIN J15 IOSTANDARD LVCMOS33} [get_ports {a}]
-  ```
-- **Every port needs both `PACKAGE_PIN` and `IOSTANDARD`** in the XDC.
-- **Multi-file projects**: put all source files in the same folder. The build script auto-detects them and asks you to pick the top module.
-
-## Programming the FPGA
-
-This project uses **OpenFPGALoader** — it supports the Nexys A7's built-in USB-JTAG (FTDI) directly. No external programmer needed.
-
-### Verify Connection
+Verify the board is detected first:
 
 ```bash
 openFPGALoader --detect
 ```
 
-### Flash the Bitstream
+#### WSL2 users — pass USB through to WSL
 
-```bash
-openFPGALoader -b nexys_a7_100 fpga-project/app/project1/run.bit
-```
-
-Or use the built-in flash command:
-
-```bash
-cd fpga-project && ./build.sh --flash
-```
-
-### WSL Users
-
-You must pass the USB device through to WSL first. In **PowerShell (Admin)**:
+In **PowerShell (as Administrator)**:
 
 ```powershell
 usbipd list
 usbipd attach --wsl --busid <BUSID>
 ```
 
-Then run `openFPGALoader --detect` in WSL to confirm.
+Then confirm inside WSL:
+
+```bash
+openFPGALoader --detect
+```
+
+---
+
+## Creating your own project
+
+1. Create a folder under `app/`:
+
+   ```bash
+   mkdir app/my_project
+   ```
+
+2. Add a **Verilog source** (`.v` or `.sv`) file with a `module` declaration.
+
+3. Add a **constraints file** (`.xdc`) that maps every port to a physical pin:
+
+   ```tcl
+   set_property -dict {PACKAGE_PIN J15 IOSTANDARD LVCMOS33} [get_ports {sw[0]}]
+   ```
+
+4. Run `./build.sh` and select your project.
+
+### Constraints file rules
+
+- **No spaces inside braces** — `nextpnr-xilinx` crashes on `{ a }`. Always write `{a}`:
+
+  ```tcl
+  # ✗ WRONG
+  set_property -dict { PACKAGE_PIN J15 IOSTANDARD LVCMOS33 } [get_ports { a }]
+
+  # ✓ CORRECT
+  set_property -dict {PACKAGE_PIN J15 IOSTANDARD LVCMOS33} [get_ports {a}]
+  ```
+
+- Every port needs both `PACKAGE_PIN` and `IOSTANDARD`.
+- Don't use Verilog reserved words as module names (`xor`, `and`, `or`, …). Use `xor_gate`, `and_gate`, etc.
+
+### Nexys A7-100T pin reference
+
+| Signal | Package Pin | Notes |
+|--------|-------------|-------|
+| SW0–SW15 | J15, L16, M13, R15, R17, T18, U18, R13, T8, U8, R16, T13, H6, U12, U11, V10 | Slide switches |
+| BTN0–BTN4 | N17, M18, P17, M17 | Push buttons (active-high) |
+| LED0–LED15 | H17, K15, J13, N14, R18, V17, U17, U16, V16, T15, U14, T16, V15, V14, V12, V11 | LEDs |
+| CLK (100 MHz) | E3 | Main system clock |
+
+---
 
 ## Troubleshooting
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| `fasm2frames not found` | prjxray not set up or `.tools/prjxray` is empty | Delete `.tools/prjxray` and re-run `./setup-prjxray.sh` |
-| `xc7frames2bit not found` | prjxray C++ tools not built | Run `cd .tools/prjxray && make build` |
-| `Module 'xor' not found` | Module name is a Verilog reserved word | Rename to `xor_gate`, etc. |
-| `Assertion failure: str.back() == '}'` | Spaces inside braces in `.xdc` | Change `{ a }` to `{a}` |
+| `fasm2frames not found` | prjxray not set up | Re-run `./setup.sh` |
+| `xc7frames2bit not found` | prjxray C++ tools not built | `cd .tools/prjxray && cmake --build build` |
+| `Unable to read chipdb` | chipdb missing | Run `./setup.sh` or download manually (see Step 1c) |
+| `Assertion failure: str.back() == '}'` | Spaces inside XDC braces | Change `{ a }` → `{a}` |
+| `Module 'xor' not found` | Reserved word used as module name | Rename module to `xor_gate` |
 | `All .sv/.v files are empty` | Source file has no `module` declaration | Add your design code |
 | `port has no IOSTANDARD` | Missing I/O standard in constraints | Add `IOSTANDARD LVCMOS33` for each port |
-| `Unable to read chipdb` | chipdb file missing | Download it (see Step 3 above) |
-| `unable to open ftdi device` | USB not connected or no permissions | Check `lsusb`, add udev rules, or `usbipd attach` (WSL) |
-| Build fails with no clear error | — | Check `yosys.log` / `nextpnr.log` in the temp build dir (path is printed on failure) |
+| `unable to open ftdi device` | USB not connected or permissions issue | Check `lsusb`; run `sudo openFPGALoader --detect`; or use `usbipd attach` on WSL |
+| Build fails silently | General error | Check `build/yosys.log` and `build/nextpnr.log` in your project's `build/` folder (created on failure) |
+
+### Check all tools are installed
+
+```bash
+yosys --version
+nextpnr-xilinx --version
+openFPGALoader --Version
+ls ~/.local/share/nextpnr/xilinx/chipdb-xc7a100t.bin
+ls .tools/prjxray/build/tools/xc7frames2bit
+```
+
+---
+
+## How it works (under the hood)
+
+```
+your_design.sv
+      │
+      ▼  yosys -p "synth_xilinx …"
+  design.json        (gate-level netlist)
+      │
+      ▼  nextpnr-xilinx --chipdb chipdb-xc7a100t.bin
+  design.fasm        (placed-and-routed FASM)
+      │
+      ▼  fasm2frames (Python, prjxray)
+  design.frames      (binary frame data)
+      │
+      ▼  xc7frames2bit (C++, prjxray)
+  design.bit         ← flash this to the board
+```

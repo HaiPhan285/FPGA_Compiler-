@@ -1,4 +1,0 @@
-
-This generates a list of all routing nodes and the wires that make up that
-node. Routing nodes that only contain one wire are not included in the list.
-

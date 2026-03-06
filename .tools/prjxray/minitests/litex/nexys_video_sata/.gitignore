@@ -1,7 +1,0 @@
-# Build data
-build*
-sata.*
-*.ok
-
-# Riscv toolchain
-riscv*

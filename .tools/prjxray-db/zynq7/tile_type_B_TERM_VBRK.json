@@ -1,8 +1,0 @@
-{
-    "pips": {},
-    "sites": [],
-    "tile_type": "B_TERM_VBRK",
-    "wires": {
-        "DUMMYFOO": null
-    }
-}

@@ -1,5 +1,0 @@
----
-Language: Cpp
-BasedOnStyle: Chromium
-IndentWidth: 8
-UseTab: ForIndentation
