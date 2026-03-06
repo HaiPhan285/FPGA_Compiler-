@@ -1,13 +1,21 @@
-# FPGA build artifacts
+# ── Toolchain (populated by setup.sh) ────────────────────────────────────────
+.tools/
+
+# ── Build artifacts ───────────────────────────────────────────────────────────
 app/**/build/
 app/**/*.bit
 app/**/*.fasm
 app/**/*.frames
 app/**/*.json
-f4pga/.tools/
-f4pga/fpga-project/build/
-f4pga/fpga-project/command.txt
 
-# Python cache
+# ── Simulation outputs ────────────────────────────────────────────────────────
+app/**/*.vcd
+app/**/*.vvp
+app/**/*.out
+app/**/sim
+app/**/sim.out
+
+# ── Python cache ──────────────────────────────────────────────────────────────
 **/__pycache__/
 *.pyc
+*.pyo

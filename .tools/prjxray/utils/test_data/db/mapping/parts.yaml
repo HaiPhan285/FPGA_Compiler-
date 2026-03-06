@@ -1,5 +1,0 @@
-# part number to device, package and speed grade mapping
-"xc7a200tffg1156-1":
-  device: "xc7a200t"
-  package: "ffg1156"
-  speedgrade: "1"
