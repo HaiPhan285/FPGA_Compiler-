@@ -13,28 +13,48 @@ Takes your Verilog/SystemVerilog design and produces a `.bit` file you can flash
 
 ---
 
+## ⚡ TL;DR — get building in 3 steps
+
+```bash
+git clone https://github.com/HaiPhan285/FPGA_Compiler-.git
+cd FPGA_Compiler-
+chmod +x setup.sh && ./setup.sh   # one-time setup (~5 min, needs internet)
+./build.sh                         # interactive menu to pick & build a project
+```
+
+> **Requirements:** Linux (Ubuntu 22.04/24.04) or WSL2. `sudo` access needed for `setup.sh`.
+
+---
+
 ## Repository layout
 
 ```
 FPGA_Compiler-/
-├── setup.sh          ← run this once after cloning
-├── prjxray-env.sh    ← auto-sourced by build.sh
+├── setup.sh          ← run this ONCE after cloning (installs all tools)
+├── prjxray-env.sh    ← auto-sourced by build.sh (do not edit)
 ├── build.sh          ← interactive build menu
 ├── app/              ← your designs live here
 │   ├── project1/     ←   each sub-folder is one project
 │   ├── project2/
 │   ├── project3/
-│   └── project5/
+│   ├── project5/
+│   └── chapter 6/
 └── .tools/           ← auto-populated by setup.sh (gitignored)
 ```
+
+Each project folder must contain:
+- At least one `.sv` or `.v` source file with a `module` declaration
+- At least one `.xdc` constraints file mapping ports to physical pins
 
 ---
 
 ## Quick start
 
-### 1 — Requirements
+### 1 — System requirements
 
 You need **Linux** (Ubuntu 22.04 / 24.04 recommended) or **WSL2** on Windows.
+
+`setup.sh` installs everything automatically. If you prefer to install tools manually first, here are the individual steps:
 
 #### 1a. Base build tools
 
@@ -83,18 +103,11 @@ If not available in apt, build from source: <https://github.com/trabucayre/openF
 
 ---
 
-### 2 — Clone the repository
+### 2 — Clone & setup
 
 ```bash
 git clone https://github.com/HaiPhan285/FPGA_Compiler-.git
 cd FPGA_Compiler-
-```
-
----
-
-### 3 — Run setup (one time only)
-
-```bash
 chmod +x setup.sh
 ./setup.sh
 ```
@@ -102,12 +115,15 @@ chmod +x setup.sh
 `setup.sh` does the following automatically:
 
 1. Installs any missing system packages
-2. Clones **prjxray** and builds its C++ tools (`xc7frames2bit`, `bitread`, …)
-3. Clones the **prjxray-db** Artix-7 tile database
-4. Creates a Python virtual environment (`.tools/env`) and installs Python deps
-5. Downloads the **chipdb** for nextpnr-xilinx (`~/.local/share/nextpnr/xilinx/`)
+2. Installs **yosys** (synthesis), **nextpnr-xilinx** (place-and-route), **openFPGALoader** (flash)
+3. Clones **prjxray** and builds its C++ tools (`xc7frames2bit`, `bitread`, …)
+4. Clones the **prjxray-db** Artix-7 tile database
+5. Creates a Python virtual environment (`.tools/env`) and installs Python deps
+6. Downloads the **chipdb** for nextpnr-xilinx (~50 MB → `~/.local/share/nextpnr/xilinx/`)
 
-> **If setup fails partway through** (network issue, etc.), just delete the incomplete directory and re-run:
+Setup takes ~5 minutes on a good connection. Run it only once.
+
+> **If setup fails partway through** (network issue, etc.), delete the incomplete directory and re-run:
 > ```bash
 > rm -rf .tools/prjxray   # or .tools/prjxray-db
 > ./setup.sh
@@ -115,7 +131,7 @@ chmod +x setup.sh
 
 ---
 
-### 4 — Build a project
+### 3 — Build a project
 
 ```bash
 ./build.sh
@@ -150,7 +166,7 @@ Select a project number. If the folder has multiple source files, you will be as
 
 ---
 
-### 5 — Flash to the FPGA
+### 4 — Flash to the FPGA
 
 Connect the Nexys A7 via USB, then:
 

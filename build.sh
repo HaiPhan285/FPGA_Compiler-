@@ -408,7 +408,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-rm -f ${PROJECT}.bit
+rm -f "${PROJECT}.bit"
 
 # Find all .sv and .v files, excluding testbench/simulation files
 SV_FILES=$(ls -1 *.sv 2>/dev/null | grep -v -E '^(tb_.*|sim\.sv)$' | tr '\n' ' ')
