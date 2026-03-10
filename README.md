@@ -79,16 +79,26 @@ Verify: `yosys --version`
 
 #### 1c. nextpnr-xilinx (place-and-route)
 
-nextpnr-xilinx is **not** in the default Ubuntu repos. Try apt first; if that fails, grab the pre-built binary from the [openXC7 releases page](https://github.com/openXC7/nextpnr-xilinx/releases):
+nextpnr-xilinx is **not** available as pre-built binaries anymore. The recommended way to install is via snap:
 
 ```bash
-# Option A — apt (works if your distro ships it)
-sudo apt-get install -y nextpnr-xilinx
+# Option A — snap (recommended for Ubuntu 22.04/24.04)
+# First, install snap if you don't have it:
+sudo apt-get install -y snapd
 
-# Option B — download pre-built binary
-sudo wget -O /usr/local/bin/nextpnr-xilinx \
-    https://github.com/openXC7/nextpnr-xilinx/releases/download/release-0.5.0/nextpnr-xilinx
-sudo chmod +x /usr/local/bin/nextpnr-xilinx
+# Install the openXC7 toolchain (includes nextpnr-xilinx, yosys, fasm2frames, xc7frames2bit)
+sudo snap install --classic --dangerous openxc7_0.8.2_amd64.snap
+
+# Or use the installer script:
+wget -qO - https://raw.githubusercontent.com/openXC7/toolchain-installer/main/toolchain-installer.sh | bash
+
+# Create aliases for the tools
+sudo snap alias openxc7.nextpnr-xilinx nextpnr-xilinx
+sudo snap alias openxc7.fasm2frames fasm2frames
+sudo snap alias openxc7.xc7frames2bit xc7frames2bit
+
+# Option B — build from source (takes ~30 min)
+# See: https://github.com/openXC7/nextpnr-xilinx
 ```
 
 Verify: `nextpnr-xilinx --version`
@@ -115,17 +125,17 @@ chmod +x setup.sh
 `setup.sh` does the following automatically:
 
 1. Installs any missing system packages
-2. Installs **yosys** (synthesis), **nextpnr-xilinx** (place-and-route), **openFPGALoader** (flash)
+2. Installs **yosys** (synthesis), **nextpnr-xilinx** (place-and-route via snap), **openFPGALoader** (flash)
 3. Clones **prjxray** and builds its C++ tools (`xc7frames2bit`, `bitread`, …)
 4. Clones the **prjxray-db** Artix-7 tile database
 5. Creates a Python virtual environment (`.tools/env`) and installs Python deps
-6. Downloads the **chipdb** for nextpnr-xilinx (~50 MB → `~/.local/share/nextpnr/xilinx/`)
+6. Sets up the **chipdb** for nextpnr-xilinx (bundled in snap package)
 
 Setup takes ~5 minutes on a good connection. Run it only once.
 
 > **If setup fails partway through** (network issue, etc.), delete the incomplete directory and re-run:
 > ```bash
-> rm -rf .tools/prjxray   # or .tools/prjxray-db
+> rm -rf .tools/prjxray .tools/prjxray-db .tools/env
 > ./setup.sh
 > ```
 
@@ -253,7 +263,8 @@ openFPGALoader --detect
 |-------|-------|-----|
 | `fasm2frames not found` | prjxray not set up | Re-run `./setup.sh` |
 | `xc7frames2bit not found` | prjxray C++ tools not built | `cd .tools/prjxray && cmake --build build` |
-| `Unable to read chipdb` | chipdb missing | Run `./setup.sh` or download manually (see Step 1c) |
+| `nextpnr-xilinx: command not found` | Tool not installed correctly | Run: `wget -qO - https://raw.githubusercontent.com/openXC7/toolchain-installer/main/toolchain-installer.sh \| bash` |
+| `Unable to read chipdb` | chipdb missing | Should be bundled in snap; try reinstalling: `sudo snap install --classic --dangerous $(ls openxc7_*.snap)` |
 | `Assertion failure: str.back() == '}'` | Spaces inside XDC braces | Change `{ a }` → `{a}` |
 | `Module 'xor' not found` | Reserved word used as module name | Rename module to `xor_gate` |
 | `All .sv/.v files are empty` | Source file has no `module` declaration | Add your design code |
@@ -266,8 +277,8 @@ openFPGALoader --detect
 ```bash
 yosys --version
 nextpnr-xilinx --version
-openFPGALoader --Version
-ls ~/.local/share/nextpnr/xilinx/chipdb-xc7a100t.bin
+openFPGALoader --version
+ls ~/.local/share/nextpnr/xilinx/chipdb-xc7a100t.bin 2>/dev/null || echo "chipdb handled by snap"
 ls .tools/prjxray/build/tools/xc7frames2bit
 ```
 

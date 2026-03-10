@@ -411,8 +411,8 @@ trap cleanup EXIT
 rm -f "${PROJECT}.bit"
 
 # Find all .sv and .v files, excluding testbench/simulation files
-SV_FILES=$(ls -1 *.sv 2>/dev/null | grep -v -E '^(tb_.*|sim\.sv)$' | tr '\n' ' ')
-V_FILES=$(ls -1 *.v 2>/dev/null | grep -v -E '^(tb_.*|sim\.v)$' | tr '\n' ' ')
+SV_FILES=$(ls -1 *.sv 2>/dev/null | grep -v -E '^(tb_.*|.*_tb\.sv|sim\.sv)$' | tr '\n' ' ')
+V_FILES=$(ls -1 *.v 2>/dev/null | grep -v -E '^(tb_.*|.*_tb\.v|sim\.v)$' | tr '\n' ' ')
 ALL_FILES="${SV_FILES}${V_FILES}"
 if [ -z "$ALL_FILES" ]; then
     echo -e "${RED}Error: No .sv or .v files found in current directory.${NC}"
@@ -451,6 +451,14 @@ CHIPDB_PATHS=(
     "/usr/local/share/nextpnr/xilinx/chipdb-xc7a100t.bin"
 )
 
+# Also check snap directory
+if [ -d "/snap/openxc7" ]; then
+    SNAP_CHIPDB=$(find /snap/openxc7 -name "xc7a100t*.bin" 2>/dev/null | head -1 || true)
+    if [ -n "${SNAP_CHIPDB}" ]; then
+        CHIPDB_PATHS+=("${SNAP_CHIPDB}")
+    fi
+fi
+
 CHIPDB_FOUND=""
 for path in "${CHIPDB_PATHS[@]}"; do
     if [ -f "$path" ]; then
@@ -460,18 +468,12 @@ for path in "${CHIPDB_PATHS[@]}"; do
 done
 
 if [ -z "$CHIPDB_FOUND" ]; then
-    echo -e "${RED}Chipdb file not found. Attempting to download...${NC}"
-    
-    mkdir -p "${HOME}/.local/share/nextpnr/xilinx"
-    
-    if wget -q --show-progress -O "${HOME}/.local/share/nextpnr/xilinx/chipdb-xc7a100t.bin" \
-        "https://github.com/openXC7/nextpnr-xilinx/releases/download/release-0.5.0/chipdb-xc7a100t.bin" 2>/dev/null; then
-        CHIPDB_FOUND="${HOME}/.local/share/nextpnr/xilinx/chipdb-xc7a100t.bin"
-        echo -e "${GREEN}Successfully downloaded chipdb!${NC}"
-    else
-        echo -e "${RED}Failed to download chipdb.${NC}"
-        exit 1
-    fi
+    echo -e "${RED}Chipdb file not found. The chipdb should be bundled with the openXC7 snap package.${NC}"
+    echo -e "${YELLOW}Please install the toolchain first:${NC}"
+    echo "  wget -qO - https://raw.githubusercontent.com/openXC7/toolchain-installer/main/toolchain-installer.sh | bash"
+    echo ""
+    echo "Or if you have nextpnr-xilinx installed, please ensure the chipdb is available."
+    exit 1
 fi
 
 echo "Using chipdb: ${CHIPDB_FOUND}"
