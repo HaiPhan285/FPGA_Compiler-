@@ -50,12 +50,12 @@ if [[ $# -eq 0 ]]; then
         PROJECT=$(basename "$SELECTED_DIR")
 
         # Find all potential top modules (Verilog files)
-        # Exclude common non-top files like gates.v, defines.v, etc.
-        mapfile -t SRC_FILES < <(find "$SELECTED_DIR" -maxdepth 1 \( -name "*.sv" -o -name "*.v" \) ! -name "gates.v" ! -name "defines.v" ! -name "params.v" | sort)
+        # Look in project root and common subdirectories like rtl/
+        mapfile -t SRC_FILES < <(find "$SELECTED_DIR" -maxdepth 2 \( -name "*.sv" -o -name "*.v" \) ! -name "gates.v" ! -name "defines.v" ! -name "params.v" | sort)
         
         if [ ${#SRC_FILES[@]} -eq 0 ]; then
              # If filtered list is empty, fall back to all files
-             mapfile -t SRC_FILES < <(find "$SELECTED_DIR" -maxdepth 1 \( -name "*.sv" -o -name "*.v" \) | sort)
+             mapfile -t SRC_FILES < <(find "$SELECTED_DIR" -maxdepth 2 \( -name "*.sv" -o -name "*.v" \) | sort)
         fi
 
         # Filter out empty source files
@@ -113,7 +113,7 @@ if [[ $# -eq 0 ]]; then
         fi
 
         # Check that the constraints file has content
-        mapfile -t XDC_FILES < <(find "$SELECTED_DIR" -maxdepth 1 -name "*.xdc" | sort)
+        mapfile -t XDC_FILES < <(find "$SELECTED_DIR" -maxdepth 2 -name "*.xdc" | sort)
         # Filter out empty XDC files
         NON_EMPTY_XDC=()
         for xdc in "${XDC_FILES[@]}"; do
@@ -145,18 +145,18 @@ if [[ $# -eq 0 ]]; then
             fi
             
             if [[ "$XDC_CHOICE" =~ ^[0-9]+$ ]] && [ "$XDC_CHOICE" -ge 1 ] && [ "$XDC_CHOICE" -le ${#XDC_FILES[@]} ]; then
-                CONSTRAINTS=$(basename "${XDC_FILES[$((XDC_CHOICE-1))]}")
+                CONSTRAINTS="${XDC_FILES[$((XDC_CHOICE-1))]}"
             else
                 echo "Invalid selection."
                 exit 1
             fi
         else
-            CONSTRAINTS=$(basename "${XDC_FILES[0]}")
+            CONSTRAINTS="${XDC_FILES[0]}"
         fi
 
         echo ""
         echo "  Design file : ${TOP}.sv / ${TOP}.v"
-        echo "  Constraints : ${CONSTRAINTS}"
+        echo "  Constraints : $(basename "$CONSTRAINTS")"
     else
         echo "Invalid selection."
         exit 1
@@ -226,6 +226,22 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# When using command-line arguments, populate SRC_FILES from source-dir
+if [ -n "$SOURCE_DIR" ] && [ -d "$SOURCE_DIR" ]; then
+    # Convert to absolute path if relative
+    if [[ "$SOURCE_DIR" != /* ]]; then
+        SOURCE_DIR="$(pwd)/$SOURCE_DIR"
+    fi
+    mapfile -t SRC_FILES < <(find "$SOURCE_DIR" -maxdepth 2 \( -name "*.sv" -o -name "*.v" \) ! -name "gates.v" ! -name "defines.v" ! -name "params.v" | sort)
+    # Set SELECTED_DIR for command-line mode
+    SELECTED_DIR="$SOURCE_DIR"
+fi
+
+# Convert CONSTRAINTS to absolute path if relative
+if [ -n "$CONSTRAINTS" ] && [[ "$CONSTRAINTS" != /* ]]; then
+    CONSTRAINTS="$(pwd)/$CONSTRAINTS"
+fi
+
 # Build all projects in app/ directory
 if [ "$BUILD_ALL" = true ]; then
     APP_DIR="${BUILD_SCRIPT_DIR}/app"
@@ -239,7 +255,7 @@ if [ "$BUILD_ALL" = true ]; then
         echo -e "${GREEN}=== Project: ${proj_name} ===${NC}"
 
         # Pick source file
-        mapfile -t SRC_FILES < <(find "$proj_dir" -maxdepth 1 \( -name "*.sv" -o -name "*.v" \) | sort)
+        mapfile -t SRC_FILES < <(find "$proj_dir" -maxdepth 2 \( -name "*.sv" -o -name "*.v" \) | sort)
         if [ ${#SRC_FILES[@]} -eq 0 ]; then
             echo -e "${RED}  Skipping ${proj_name}: no .sv/.v source found${NC}"
             FAILED+=("$proj_name")
@@ -259,7 +275,7 @@ if [ "$BUILD_ALL" = true ]; then
         detected_top=$(basename "$SELECTED_SRC" .sv); detected_top=$(basename "$detected_top" .v)
 
         # Pick constraints file
-        mapfile -t XDC_FILES < <(find "$proj_dir" -maxdepth 1 -name "*.xdc" | sort)
+        mapfile -t XDC_FILES < <(find "$proj_dir" -maxdepth 2 -name "*.xdc" | sort)
         if [ ${#XDC_FILES[@]} -eq 0 ]; then
             echo -e "${RED}  Skipping ${proj_name}: no .xdc constraints found${NC}"
             FAILED+=("$proj_name")
@@ -395,6 +411,36 @@ echo -e "${YELLOW}Cleaning previous build...${NC}"
 BUILD_DIR=$(mktemp -d)
 echo "Build artifacts will be stored in temporary directory: $BUILD_DIR"
 
+# Copy selected source file and any .v dependencies to build directory
+echo -e "${YELLOW}Copying source files...${NC}"
+if [ -f "$SELECTED_SRC" ]; then
+    cp "$SELECTED_SRC" "$BUILD_DIR/"
+    echo "  Copied: $(basename "$SELECTED_SRC")"
+fi
+# Copy all .v files (dependencies like picorv32.v)
+for vfile in "$SOURCE_DIR"/*.v; do
+    if [ -f "$vfile" ] && [ "$(basename "$vfile")" != "$(basename "$SELECTED_SRC" .sv).v" ]; then
+        cp "$vfile" "$BUILD_DIR/"
+        echo "  Copied: $(basename "$vfile")"
+    fi
+done
+
+# Copy hex files to build directory
+if [ -n "$SOURCE_DIR" ]; then
+    for hex in "$SOURCE_DIR"/*.hex; do
+        if [ -f "$hex" ]; then
+            cp "$hex" "$BUILD_DIR/"
+            echo "  Copied: $(basename "$hex")"
+        fi
+    done
+fi
+
+# Copy constraint file to build directory
+if [ -n "$CONSTRAINTS" ] && [ -f "$CONSTRAINTS" ]; then
+    cp "$CONSTRAINTS" "$BUILD_DIR/"
+    echo "  Copied: $(basename "$CONSTRAINTS")"
+fi
+
 # Function to cleanup on exit
 cleanup() {
     EXIT_CODE=$?
@@ -404,9 +450,15 @@ cleanup() {
     else
         echo "Build failed. Artifacts preserved in $BUILD_DIR for debugging."
     fi
+    if [ -n "${SELECTED_DIR}" ] && [ -f "${BUILD_DIR}/${PROJECT}.bit" ]; then
+        cp "${BUILD_DIR}/${PROJECT}.bit" "${SELECTED_DIR}/"
+    fi
     exit $EXIT_CODE
 }
 trap cleanup EXIT
+
+# Change to build directory
+cd "$BUILD_DIR"
 
 rm -f "${PROJECT}.bit"
 
@@ -424,11 +476,10 @@ echo ""
 
 echo -e "${YELLOW}Step 1: Synthesis with Yosys${NC}"
 
-# Build yosys command to read all .sv and .v files
-YOSYS_CMD=""
-if [ -n "$SV_FILES" ]; then
-    YOSYS_CMD="${YOSYS_CMD}read_verilog -sv ${SV_FILES}; "
-fi
+# Build yosys command to read selected source file and any .v dependencies
+SELECTED_BASENAME=$(basename "$SELECTED_SRC")
+V_FILES=$(ls -1 *.v 2>/dev/null | grep -v -E '^(tb_.*|.*_tb\.v|sim\.v)$' | tr '\n' ' ')
+YOSYS_CMD="read_verilog -sv ${SELECTED_BASENAME}; "
 if [ -n "$V_FILES" ]; then
     YOSYS_CMD="${YOSYS_CMD}read_verilog ${V_FILES}; "
 fi
@@ -505,7 +556,15 @@ ${XRAY_TOOLS_DIR}/xc7frames2bit \
 
 echo ""
 echo -e "${GREEN}=== Build Complete ===${NC}"
-echo "Bitstream generated: ${PROJECT}.bit"
+
+# Copy bitstream to project directory
+if [ -n "${SELECTED_DIR}" ]; then
+    cp "${BUILD_DIR}/${PROJECT}.bit" "${SELECTED_DIR}/"
+    echo "Bitstream saved to: ${SELECTED_DIR}/${PROJECT}.bit"
+else
+    cp "${BUILD_DIR}/${PROJECT}.bit" "${SOURCE_DIR}/"
+    echo "Bitstream saved to: ${SOURCE_DIR}/${PROJECT}.bit"
+fi
 echo ""
 echo "To program the FPGA:"
-echo "  openFPGALoader -b nexys_a7_100 ${PROJECT}.bit"
+echo "  openFPGALoader -b nexys_a7_100 \"${SELECTED_DIR}/${PROJECT}.bit\""

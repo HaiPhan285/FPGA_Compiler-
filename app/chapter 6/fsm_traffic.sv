@@ -1,142 +1,162 @@
-// ======================= fsm_traffic.v =======================
 `timescale 1ns/1ps
-// Traffic light FSM + timers + latched pedestrian request (Verilog-2001)
 
 module fsm_traffic #(
-    parameter integer GREEN_TICKS      = 100,
-    parameter integer YELLOW_TICKS     = 30,
-    parameter integer RED_TICKS        = 60,
-    parameter integer WALK_TICKS       = 40,
-    parameter integer DEBOUNCE_STABLE  = 20
+  parameter int GREEN_COUNT  = 50,
+  parameter int YELLOW_COUNT = 10,
+  parameter int RED_COUNT    = 40,
+  parameter int WALK_COUNT   = 20
 )(
-    input  wire clk,
-    input  wire rst_n,
-    input  wire ped_btn_async,
+  input  logic clk,
+  input  logic rst,            // active-high synchronous reset
+  input  logic ped_req_evt,    // 1-cycle event: debounced rising edge of button
 
-    output reg  car_g,
-    output reg  car_y,
-    output reg  car_r,
-    output reg  ped_walk,
-    output reg  ped_dont
+  output logic car_g,
+  output logic car_y,
+  output logic car_r,
+  output logic ped_walk,
+  output logic ped_dont,
+
+  output logic [1:0] state_out // 00=G, 01=Y, 10=R, 11=W (debug/verification)
 );
 
-    // ---- button conditioning ----
-    wire ped_level;
-    wire ped_press;
+  // -----------------------------
+  // State encoding (Moore)
+  // -----------------------------
+  typedef enum logic [1:0] { S_G=2'b00, S_Y=2'b01, S_R=2'b10, S_W=2'b11 } state_t;
+  state_t state, next_state;
 
-    sync_debounce #(.STABLE_CYCLES(DEBOUNCE_STABLE)) u_btn (
-        .clk(clk),
-        .rst_n(rst_n),
-        .async_btn(ped_btn_async),
-        .clean_level(ped_level),
-        .press_pulse(ped_press)
-    );
+  assign state_out = state;
 
-    // ---- request latch ----
-    reg ped_req_latched;
+  // -----------------------------
+  // Shared phase timer (counts cycles spent in current state)
+  // -----------------------------
+  localparam int MAX_COUNT = (GREEN_COUNT > YELLOW_COUNT) ? GREEN_COUNT : YELLOW_COUNT;
+  localparam int MAX_COUNT2 = (RED_COUNT > WALK_COUNT) ? RED_COUNT : WALK_COUNT;
+  localparam int MAX_PHASE  = (MAX_COUNT > MAX_COUNT2) ? MAX_COUNT : MAX_COUNT2;
 
-    // ---- FSM states ----
-    localparam [1:0] S_GREEN  = 2'b00;
-    localparam [1:0] S_YELLOW = 2'b01;
-    localparam [1:0] S_RED    = 2'b10;
-    localparam [1:0] S_WALK   = 2'b11;
+  localparam int CNT_W = (MAX_PHASE <= 1) ? 1 : $clog2(MAX_PHASE);
 
-    reg [1:0] state, next_state;
+  logic [CNT_W-1:0] phase_cnt;
 
-    // ---- timer ----
-    reg [31:0] tick_cnt;
-    reg [31:0] tick_limit;
-    wire       time_done;
+  // "done" flags are asserted in the last cycle of each state
+  logic tG_done, tY_done, tR_done, tW_done;
 
-    assign time_done = (tick_cnt >= (tick_limit - 1));
+  always_comb begin
+    tG_done = (state == S_G) && (phase_cnt == GREEN_COUNT-1);
+    tY_done = (state == S_Y) && (phase_cnt == YELLOW_COUNT-1);
+    tR_done = (state == S_R) && (phase_cnt == RED_COUNT-1);
+    tW_done = (state == S_W) && (phase_cnt == WALK_COUNT-1);
+  end
 
-    // tick_limit based on state
-    always @(*) begin
-        case (state)
-            S_GREEN:  tick_limit = GREEN_TICKS;
-            S_YELLOW: tick_limit = YELLOW_TICKS;
-            S_RED:    tick_limit = RED_TICKS;
-            S_WALK:   tick_limit = WALK_TICKS;
-            default:  tick_limit = GREEN_TICKS;
-        endcase
+  // Reset phase counter on state change; otherwise increment
+  always_ff @(posedge clk) begin
+    if (rst) begin
+      phase_cnt <= '0;
+    end else begin
+      if (state != next_state) begin
+        phase_cnt <= '0;
+      end else begin
+        phase_cnt <= phase_cnt + 1'b1;
+      end
     end
+  end
 
-    // ---- sequential: state + timer + latch ----
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            state           <= S_GREEN;
-            tick_cnt        <= 32'd0;
-            ped_req_latched <= 1'b0;
-        end else begin
-            // latch request on press
-            if (ped_press)
-                ped_req_latched <= 1'b1;
+  // -----------------------------
+  // Pedestrian request latch
+  // -----------------------------
+  logic req_latched;
 
-            // update state
-            state <= next_state;
+  // Latch any request event; clear after WALK completes (when leaving WALK)
+  always_ff @(posedge clk) begin
+    if (rst) begin
+      req_latched <= 1'b0;
+    end else begin
+      // set
+      if (ped_req_evt) begin
+        req_latched <= 1'b1;
+      end
+      // clear when WALK finishes (transition W -> G on tW_done)
+      if (state == S_W && tW_done) begin
+        req_latched <= 1'b0;
+      end
+    end
+  end
 
-            // timer reset on state change
-            if (state != next_state)
-                tick_cnt <= 32'd0;
-            else if (!time_done)
-                tick_cnt <= tick_cnt + 32'd1;
+  // -----------------------------
+  // Next-state logic
+  // -----------------------------
+  always_comb begin
+    next_state = state;
 
-            // clear request after WALK completes
-            if ((state == S_WALK) && time_done)
-                ped_req_latched <= 1'b0;
+    unique case (state)
+      S_G: begin
+        if (tG_done) next_state = S_Y;
+      end
+
+      S_Y: begin
+        if (tY_done) next_state = S_R;
+      end
+
+      S_R: begin
+        if (tR_done) begin
+          // Only decision point: at end of Red
+          if (req_latched) next_state = S_W;
+          else             next_state = S_G;
         end
-    end
+      end
 
-    // ---- next-state logic ----
-    always @(*) begin
-        next_state = state;
-        case (state)
-            S_GREEN:  if (time_done) next_state = S_YELLOW;
-            S_YELLOW: if (time_done) next_state = S_RED;
+      S_W: begin
+        if (tW_done) next_state = S_G;
+      end
 
-            S_RED: begin
-                if (time_done) begin
-                    if (ped_req_latched) next_state = S_WALK;
-                    else                 next_state = S_GREEN;
-                end
-            end
+      default: begin
+        // illegal-state recovery
+        next_state = S_G;
+      end
+    endcase
+  end
 
-            S_WALK: if (time_done) next_state = S_GREEN;
+  // State register
+  always_ff @(posedge clk) begin
+    if (rst) state <= S_G;
+    else     state <= next_state;
+  end
 
-            default: next_state = S_GREEN;
-        endcase
-    end
+  // -----------------------------
+  // Moore outputs (depend only on state)
+  // -----------------------------
+  always_comb begin
+    // defaults
+    car_g     = 1'b0;
+    car_y     = 1'b0;
+    car_r     = 1'b0;
+    ped_walk  = 1'b0;
+    ped_dont  = 1'b1;
 
-    // ---- outputs (Moore) ----
-    always @(*) begin
-        // defaults
-        car_g    = 1'b0;
-        car_y    = 1'b0;
-        car_r    = 1'b0;
-        ped_walk = 1'b0;
+    unique case (state)
+      S_G: begin
+        car_g    = 1'b1;
         ped_dont = 1'b1;
-
-        case (state)
-            S_GREEN: begin
-                car_g    = 1'b1;
-                ped_dont = 1'b1;
-            end
-            S_YELLOW: begin
-                car_y    = 1'b1;
-                ped_dont = 1'b1;
-            end
-            S_RED: begin
-                car_r    = 1'b1;
-                ped_dont = 1'b1;
-            end
-            S_WALK: begin
-                car_r    = 1'b1;  // cars stopped during walk
-                ped_walk = 1'b1;
-                ped_dont = 1'b0;
-            end
-            default: begin
-            end
-        endcase
-    end
+      end
+      S_Y: begin
+        car_y    = 1'b1;
+        ped_dont = 1'b1;
+      end
+      S_R: begin
+        car_r    = 1'b1;
+        ped_dont = 1'b1;
+      end
+      S_W: begin
+        car_r    = 1'b1;  // safety: cars stopped during walk
+        ped_walk = 1'b1;
+        ped_dont = 1'b0;
+      end
+      default: begin
+        // safe default (all red, dont walk)
+        car_r    = 1'b1;
+        ped_dont = 1'b1;
+      end
+    endcase
+  end
 
 endmodule

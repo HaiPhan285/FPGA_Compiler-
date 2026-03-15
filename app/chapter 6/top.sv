@@ -1,128 +1,146 @@
-// =============================================================================
-// top_nexys_a7.sv  —  Board Top-Level Wrapper
-// CECS-301  Lab 6  |  Nexys A7-100T
-//
-// I/O mapping
-// ───────────────────────────────────────────────────────────────────────────
-//  CLK100MHZ  (E3)   100 MHz oscillator
-//  CPU_RESETN (C12)  Active-LOW push-to-reset  →  inverted to active-HIGH rst
-//  BTNC       (N17)  Pedestrian request (center button)
-//
-//  RGB LED LD16  —  Car traffic light (color mixed)
-//    ST_RED    : R=1 G=0  →  RED
-//    ST_YELLOW : R=1 G=1  →  YELLOW  (R+G mixed)
-//    ST_GREEN  : R=0 G=1  →  GREEN
-//
-//  RGB LED LD17  —  Pedestrian signal
-//    PED_DONT  : R=1 G=0  →  RED   (don't walk)
-//    PED_WALK  : R=0 G=1  →  GREEN (walk)
-//
-//  Discrete LEDs — individual signal indicators for checkoff
-//    LED[0] H17  = CAR_G
-//    LED[1] K15  = CAR_Y
-//    LED[2] J13  = CAR_R
-//    LED[3] N14  = PED_WALK
-//    LED[4] R18  = PED_DONT
-//
-// Hardware timing  (100 MHz clock):
-//   GREEN  = 500 000 000 cycles = 5 s
-//   YELLOW = 200 000 000 cycles = 2 s
-//   RED    = 300 000 000 cycles = 3 s
-//   WALK   = 400 000 000 cycles = 4 s
-//   DEBOUNCE = 1 000 000 cycles = 10 ms
-// =============================================================================
-module top_nexys_a7 (
-    input  logic CLK100MHZ,
-    input  logic CPU_RESETN,   // active-LOW
-    input  logic BTNC,         // pedestrian request
+// fsm_traffic.sv
+// Moore FSM: G -> Y -> R -> (W optional) -> G
+// ped_press_evt is a 1-cycle clean pulse from sync+debounce.
+// ped_req_latched stores the request until WALK completes.
+// Includes clock divider for real-time second-based timing
 
-    // LD16 — car traffic light (RGB color mixing)
-    output logic LED16_R,
-    output logic LED16_G,
-    output logic LED16_B,
+module top #(
+  parameter int unsigned CLK_FREQ_MHZ = 100,
+  parameter int unsigned G_SEC = 5,
+  parameter int unsigned Y_SEC = 2,
+  parameter int unsigned R_SEC = 4,
+  parameter int unsigned W_SEC = 3,
+  parameter int unsigned SIM_MODE = 0
+) (
+  input  logic clk,
+  input  logic rst,
+  input  logic ped_press_evt,
 
-    // LD17 — pedestrian signal (RGB color mixing)
-    output logic LED17_R,
-    output logic LED17_G,
-    output logic LED17_B,
-
-    // Discrete LEDs — one per signal for clear checkoff visibility
-    output logic [4:0] LED   // [0]=CAR_G [1]=CAR_Y [2]=CAR_R [3]=PED_WALK [4]=PED_DONT
+  output logic CAR_G,
+  output logic CAR_Y,
+  output logic CAR_R,
+  output logic PED_WALK,
+  output logic PED_DONT,
+  output logic ped_req_latched,
+  output logic clk_1hz
 );
 
-    // -------------------------------------------------------------------------
-    // Internal wires
-    // -------------------------------------------------------------------------
-    logic rst;
-    logic btn_clean_unused, btn_pulse;
-    logic car_g, car_y, car_r;
-    logic ped_walk, ped_dont;
-    logic [2:0] state_out;
+  localparam int unsigned DIVIDER = SIM_MODE ? 10 : (CLK_FREQ_MHZ * 1000000 / 2);
+  localparam int unsigned CNT_W = $clog2(DIVIDER);
 
-    // -------------------------------------------------------------------------
-    // Active-HIGH reset from active-LOW board button
-    // -------------------------------------------------------------------------
-    assign rst = ~CPU_RESETN;
+  localparam [1:0] G_STATE = 2'b00;
+  localparam [1:0] Y_STATE = 2'b01;
+  localparam [1:0] R_STATE = 2'b10;
+  localparam [1:0] W_STATE = 2'b11;
 
-    // -------------------------------------------------------------------------
-    // Synchronizer + debounce
-    // -------------------------------------------------------------------------
-    sync_debounce #(
-        .DEBOUNCE_COUNT(1_000_000)   // 10 ms @ 100 MHz
-    ) u_deb (
-        .clk      (CLK100MHZ),
-        .rst      (rst),
-        .btn_raw  (BTNC),
-        .btn_clean(btn_clean_unused),
-        .btn_pulse(btn_pulse)
-    );
+  logic clk_div;
+  logic [CNT_W-1:0] div_cnt;
 
-    // -------------------------------------------------------------------------
-    // Traffic-light FSM
-    // -------------------------------------------------------------------------
-    fsm_traffic #(
-        .GREEN_COUNT (500_000_000),
-        .YELLOW_COUNT(200_000_000),
-        .RED_COUNT   (300_000_000),
-        .WALK_COUNT  (400_000_000)
-    ) u_fsm (
-        .clk          (CLK100MHZ),
-        .rst          (rst),
-        .ped_btn_pulse(btn_pulse),
-        .car_g        (car_g),
-        .car_y        (car_y),
-        .car_r        (car_r),
-        .ped_walk     (ped_walk),
-        .ped_dont     (ped_dont),
-        .state_out    (state_out)
-    );
+  always_ff @(posedge clk) begin
+    if (rst) begin
+      div_cnt <= '0;
+      clk_div <= 1'b0;
+    end else begin
+      if (div_cnt >= DIVIDER - 1) begin
+        div_cnt <= '0;
+        clk_div <= ~clk_div;
+      end else begin
+        div_cnt <= div_cnt + 1'b1;
+      end
+    end
+  end
 
-    // -------------------------------------------------------------------------
-    // LD16 — car traffic light color mixing
-    //   RED    : R=1 G=0  →  red
-    //   YELLOW : R=1 G=1  →  yellow (R+G mixed)
-    //   GREEN  : R=0 G=1  →  green
-    // -------------------------------------------------------------------------
-    assign LED16_R = car_r | car_y;
-    assign LED16_G = car_g | car_y;
-    assign LED16_B = 1'b0;
+  assign clk_1hz = clk_div;
 
-    // -------------------------------------------------------------------------
-    // LD17 — pedestrian signal
-    //   DON'T WALK : R=1 G=0  →  red
-    //   WALK       : R=0 G=1  →  green
-    // -------------------------------------------------------------------------
-    assign LED17_R = ped_dont;
-    assign LED17_G = ped_walk;
-    assign LED17_B = 1'b0;
+  localparam int unsigned G_TICKS = G_SEC;
+  localparam int unsigned Y_TICKS = Y_SEC;
+  localparam int unsigned R_TICKS = R_SEC;
+  localparam int unsigned W_TICKS = W_SEC;
 
-    // -------------------------------------------------------------------------
-    // Discrete LEDs — individual signal per LED for demo/checkoff
-    // -------------------------------------------------------------------------
-    assign LED[0] = car_g;
-    assign LED[1] = car_y;
-    assign LED[2] = car_r;
-    assign LED[3] = ped_walk;
-    assign LED[4] = ped_dont;
+  logic [1:0] state, next_state;
+
+  always_ff @(posedge clk_div) begin
+    if (rst) begin
+      ped_req_latched <= 1'b0;
+    end else begin
+      if (ped_press_evt) ped_req_latched <= 1'b1;
+      if (state == W_STATE && next_state == G_STATE) ped_req_latched <= 1'b0;
+    end
+  end
+
+  logic [31:0] tick_cnt;
+  logic [31:0] limit;
+  logic        t_done;
+
+  always_comb begin
+    case (state)
+      G_STATE: limit = (G_TICKS == 0) ? 0 : (G_TICKS - 1);
+      Y_STATE: limit = (Y_TICKS == 0) ? 0 : (Y_TICKS - 1);
+      R_STATE: limit = (R_TICKS == 0) ? 0 : (R_TICKS - 1);
+      W_STATE: limit = (W_TICKS == 0) ? 0 : (W_TICKS - 1);
+      default: limit = 0;
+    endcase
+  end
+
+  assign t_done = (tick_cnt >= limit);
+
+  always_ff @(posedge clk_div) begin
+    if (rst) begin
+      tick_cnt <= 32'd0;
+    end else begin
+      if (state != next_state) tick_cnt <= 32'd0;
+      else if (!t_done)        tick_cnt <= tick_cnt + 32'd1;
+      else                     tick_cnt <= tick_cnt;
+    end
+  end
+
+  always_ff @(posedge clk_div) begin
+    if (rst) state <= G_STATE;
+    else     state <= next_state;
+  end
+
+  always_comb begin
+    next_state = state;
+
+    case (state)
+      G_STATE: if (t_done) next_state = Y_STATE;
+      Y_STATE: if (t_done) next_state = R_STATE;
+      R_STATE: if (t_done) next_state = ped_req_latched ? W_STATE : G_STATE;
+      W_STATE: if (t_done) next_state = G_STATE;
+      default: next_state = G_STATE;
+    endcase
+  end
+
+  always_comb begin
+    CAR_G    = 1'b0;
+    CAR_Y    = 1'b0;
+    CAR_R    = 1'b0;
+    PED_WALK = 1'b0;
+    PED_DONT = 1'b0;
+
+    case (state)
+      G_STATE: begin
+        CAR_G    = 1'b1;
+        PED_DONT = 1'b1;
+      end
+      Y_STATE: begin
+        CAR_Y    = 1'b1;
+        PED_DONT = 1'b1;
+      end
+      R_STATE: begin
+        CAR_R    = 1'b1;
+        PED_DONT = 1'b1;
+      end
+      W_STATE: begin
+        CAR_R    = 1'b1;
+        PED_WALK = 1'b1;
+        PED_DONT = 1'b0;
+      end
+      default: begin
+        CAR_G    = 1'b1;
+        PED_DONT = 1'b1;
+      end
+    endcase
+  end
 
 endmodule

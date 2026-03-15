@@ -8,9 +8,6 @@ set_property -dict {PACKAGE_PIN C12 IOSTANDARD LVCMOS33} [get_ports {rst}]
 ## =================== Pedestrian Request ===================
 set_property -dict {PACKAGE_PIN N17 IOSTANDARD LVCMOS33} [get_ports {ped_press_evt}]
 
-## =================== Bug Injection (internal - tied to 0) ===================
-# bug_double_car_green is tied to 0 for normal operation
-
 ## =================== Car Traffic Light ===================
 set_property -dict {PACKAGE_PIN N15 IOSTANDARD LVCMOS33} [get_ports {CAR_G}]
 set_property -dict {PACKAGE_PIN M16 IOSTANDARD LVCMOS33} [get_ports {CAR_Y}]
@@ -22,3 +19,4 @@ set_property -dict {PACKAGE_PIN R11 IOSTANDARD LVCMOS33} [get_ports {PED_DONT}]
 
 ## =================== Debug Output ===================
 set_property -dict {PACKAGE_PIN G14 IOSTANDARD LVCMOS33} [get_ports {ped_req_latched}]
+set_property -dict {PACKAGE_PIN R16 IOSTANDARD LVCMOS33} [get_ports {clk_1hz}]
