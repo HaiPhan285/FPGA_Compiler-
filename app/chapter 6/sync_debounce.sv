@@ -1,114 +1,66 @@
-// ======================= sync_debounce.v =======================
 `timescale 1ns/1ps
-// Synchronizer + Debounce + Rising-edge Pulse (press event)
-
-module sync_2ff (
-    input  wire clk,
-    input  wire rst_n,
-    input  wire async_in,
-    output reg  sync_out
-);
-    reg ff1;
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            ff1      <= 1'b0;
-            sync_out <= 1'b0;
-        end else begin
-            ff1      <= async_in;
-            sync_out <= ff1;
-        end
-    end
-endmodule
-
-module debounce #(
-    parameter integer STABLE_CYCLES = 20
-)(
-    input  wire clk,
-    input  wire rst_n,
-    input  wire din,
-    output reg  dout
-);
-    reg din_prev;
-
-    function integer clog2;
-        input integer value;
-        integer i;
-        begin
-            value = value - 1;
-            for (i = 0; value > 0; i = i + 1)
-                value = value >> 1;
-            clog2 = i;
-        end
-    endfunction
-
-    localparam integer CNTW    = (STABLE_CYCLES <= 1) ? 1 : clog2(STABLE_CYCLES + 1);
-    localparam integer STABLE_M1 = STABLE_CYCLES - 1;
-    reg [CNTW-1:0] cnt;
-
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            din_prev <= 1'b0;
-            dout     <= 1'b0;
-            cnt      <= {CNTW{1'b0}};
-        end else begin
-            if (din == din_prev) begin
-                if (cnt < STABLE_CYCLES[CNTW-1:0])
-                    cnt <= cnt + {{(CNTW-1){1'b0}},1'b1};
-
-                if (cnt == STABLE_M1[CNTW-1:0])
-                    dout <= din;
-            end else begin
-                din_prev <= din;
-                cnt      <= {CNTW{1'b0}};
-            end
-        end
-    end
-endmodule
-
-module edge_pulse (
-    input  wire clk,
-    input  wire rst_n,
-    input  wire level_in,
-    output reg  pulse_out
-);
-    reg level_d;
-    always @(posedge clk) begin
-        if (!rst_n) begin
-            level_d   <= 1'b0;
-            pulse_out <= 1'b0;
-        end else begin
-            pulse_out <= level_in & ~level_d; // 1-cycle rising edge
-            level_d   <= level_in;
-        end
-    end
-endmodule
 
 module sync_debounce #(
-    parameter integer STABLE_CYCLES = 20
+  parameter int DEBOUNCE_COUNT = 200000  // adjust based on clk freq (e.g., 100 MHz)
 )(
-    input  wire clk,
-    input  wire rst_n,
-    input  wire async_btn,
-    output wire clean_level,
-    output wire press_pulse
+  input  logic clk,
+  input  logic rst,        // active-high synchronous reset
+  input  logic btn_async,  // raw pushbutton (asynchronous, bouncy)
+
+  output logic btn_level,  // debounced stable level
+  output logic btn_press_evt // 1-cycle pulse on rising edge of btn_level
 );
-    wire sync_level;
 
-    sync_2ff u_sync (
-        .clk(clk), .rst_n(rst_n),
-        .async_in(async_btn),
-        .sync_out(sync_level)
-    );
+  // 2-flop synchronizer
+  logic btn_ff1, btn_ff2;
+  always_ff @(posedge clk) begin
+    if (rst) begin
+      btn_ff1 <= 1'b0;
+      btn_ff2 <= 1'b0;
+    end else begin
+      btn_ff1 <= btn_async;
+      btn_ff2 <= btn_ff1;
+    end
+  end
 
-    debounce #(.STABLE_CYCLES(STABLE_CYCLES)) u_db (
-        .clk(clk), .rst_n(rst_n),
-        .din(sync_level),
-        .dout(clean_level)
-    );
+  // Debounce: require DEBOUNCE_COUNT consecutive cycles of stability before updating btn_level
+  localparam int DB_W = (DEBOUNCE_COUNT <= 1) ? 1 : $clog2(DEBOUNCE_COUNT);
+  logic [DB_W-1:0] stable_cnt;
+  logic last_sync;
 
-    edge_pulse u_ep (
-        .clk(clk), .rst_n(rst_n),
-        .level_in(clean_level),
-        .pulse_out(press_pulse)
-    );
+  always_ff @(posedge clk) begin
+    if (rst) begin
+      btn_level  <= 1'b0;
+      stable_cnt <= '0;
+      last_sync  <= 1'b0;
+    end else begin
+      if (btn_ff2 == last_sync) begin
+        // still stable, count up to DEBOUNCE_COUNT-1
+        if (stable_cnt != DEBOUNCE_COUNT-1)
+          stable_cnt <= stable_cnt + 1'b1;
+      end else begin
+        // changed -> restart stability counting
+        stable_cnt <= '0;
+        last_sync  <= btn_ff2;
+      end
+
+      // once stable long enough, accept new level
+      if (stable_cnt == DEBOUNCE_COUNT-1) begin
+        btn_level <= last_sync;
+      end
+    end
+  end
+
+  // rising-edge event pulse
+  logic btn_level_d;
+  always_ff @(posedge clk) begin
+    if (rst) begin
+      btn_level_d   <= 1'b0;
+      btn_press_evt <= 1'b0;
+    end else begin
+      btn_press_evt <= (btn_level && !btn_level_d);
+      btn_level_d   <= btn_level;
+    end
+  end
+
 endmodule

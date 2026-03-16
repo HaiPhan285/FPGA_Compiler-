@@ -7,6 +7,9 @@ app/**/*.bit
 app/**/*.fasm
 app/**/*.frames
 app/**/*.json
+app/**/*.elf
+app/**/*.hex
+app/**/*.dump
 
 # ── Simulation outputs ────────────────────────────────────────────────────────
 app/**/*.vcd
@@ -19,3 +22,18 @@ app/**/sim.out
 **/__pycache__/
 *.pyc
 *.pyo
+
+# ── IDE & OS ───────────────────────────────────────────────────────────────────
+.DS_Store
+.vscode/
+*.swp
+*.swo
+*~
+.idea/
+*.iml
+
+# ── Session/Temp files ─────────────────────────────────────────────────────────
+*.log
+*.tmp
+/tmp/
+
