@@ -235,6 +235,18 @@ if [ -n "$SOURCE_DIR" ] && [ -d "$SOURCE_DIR" ]; then
     mapfile -t SRC_FILES < <(find "$SOURCE_DIR" -maxdepth 2 \( -name "*.sv" -o -name "*.v" \) ! -name "gates.v" ! -name "defines.v" ! -name "params.v" | sort)
     # Set SELECTED_DIR for command-line mode
     SELECTED_DIR="$SOURCE_DIR"
+    
+    # If in command-line mode (TOP specified but SELECTED_SRC not set), find the source file
+    if [ -n "$TOP" ] && [ -z "$SELECTED_SRC" ]; then
+        for src in "${SRC_FILES[@]}"; do
+            basename_src=$(basename "$src" .sv)
+            basename_src=$(basename "$basename_src" .v)
+            if [ "$basename_src" = "$TOP" ]; then
+                SELECTED_SRC="$src"
+                break
+            fi
+        done
+    fi
 fi
 
 # Convert CONSTRAINTS to absolute path if relative
@@ -413,15 +425,19 @@ echo "Build artifacts will be stored in temporary directory: $BUILD_DIR"
 
 # Copy selected source file and any .v dependencies to build directory
 echo -e "${YELLOW}Copying source files...${NC}"
+SELECTED_BASENAME=$(basename "$SELECTED_SRC")
+SELECTED_NAME="${SELECTED_BASENAME%.*}"
 if [ -f "$SELECTED_SRC" ]; then
     cp "$SELECTED_SRC" "$BUILD_DIR/"
     echo "  Copied: $(basename "$SELECTED_SRC")"
 fi
 # Copy all .v files (dependencies like picorv32.v)
 for vfile in "$SOURCE_DIR"/*.v; do
-    if [ -f "$vfile" ] && [ "$(basename "$vfile")" != "$(basename "$SELECTED_SRC" .sv).v" ]; then
+    VFILE_BASENAME=$(basename "$vfile")
+    VFILE_NAME="${VFILE_BASENAME%.*}"
+    if [ -f "$vfile" ] && [ "$VFILE_BASENAME" != "$SELECTED_BASENAME" ] && [ "$VFILE_NAME" != "$SELECTED_NAME" ]; then
         cp "$vfile" "$BUILD_DIR/"
-        echo "  Copied: $(basename "$vfile")"
+        echo "  Copied: $VFILE_BASENAME"
     fi
 done
 
@@ -478,12 +494,13 @@ echo -e "${YELLOW}Step 1: Synthesis with Yosys${NC}"
 
 # Build yosys command to read selected source file and any .v dependencies
 SELECTED_BASENAME=$(basename "$SELECTED_SRC")
-V_FILES=$(ls -1 *.v 2>/dev/null | grep -v -E '^(tb_.*|.*_tb\.v|sim\.v)$' | tr '\n' ' ')
-YOSYS_CMD="read_verilog -sv ${SELECTED_BASENAME}; "
+SELECTED_NAME="${SELECTED_BASENAME%.*}"
+V_FILES=$(ls -1 *.v 2>/dev/null | grep -v -E '^(tb_.*|.*_tb\.v|sim\.v)$' | grep -v "^${SELECTED_BASENAME}$" | grep -v "^${SELECTED_NAME}.v$" | tr '\n' ' ')
+YOSYS_CMD="read_verilog -sv ${SELECTED_BASENAME}"
 if [ -n "$V_FILES" ]; then
-    YOSYS_CMD="${YOSYS_CMD}read_verilog ${V_FILES}; "
+    YOSYS_CMD="${YOSYS_CMD}; read_verilog ${V_FILES}"
 fi
-YOSYS_CMD="${YOSYS_CMD}hierarchy -check -top ${TOP}; synth_xilinx -family xc7 -top ${TOP}; write_json \"${BUILD_DIR}/${PROJECT}.json\""
+YOSYS_CMD="${YOSYS_CMD}; hierarchy -check -top ${TOP}; synth_xilinx -family xc7 -top ${TOP}; write_json \"${BUILD_DIR}/${PROJECT}.json\""
 
 yosys -p "${YOSYS_CMD}" 2>&1 | tee ${BUILD_DIR}/yosys.log
 
