@@ -101,6 +101,14 @@ sudo snap alias openxc7.xc7frames2bit xc7frames2bit
 # See: https://github.com/openXC7/nextpnr-xilinx
 ```
 
+**Chip database (chipdb) for Nexys A7-100T:**
+```bash
+mkdir -p ~/.local/share/nextpnr/xilinx/
+wget https://github.com/YosysHQ/nextpnr-xilinx/releases/download/v0.3/chipdb-xc7a100t.bin \
+    -O ~/.local/share/nextpnr/xilinx/chipdb-xc7a100t.bin
+```
+- **Resource:** https://github.com/YosysHQ/nextpnr-xilinx/releases/tag/v0.3
+
 Verify: `nextpnr-xilinx --version`
 
 #### 1d. OpenFPGALoader (flashing — skip if you only want to build)
