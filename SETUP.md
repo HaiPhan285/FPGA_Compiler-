@@ -1,10 +1,6 @@
-# FPGA Compiler - Complete Setup Guide for New Users
+# FPGA Compiler - Setup Guide (DEPRECATED)
 
-This guide will walk you through setting up the entire FPGA development environment from scratch. Follow each step carefully to avoid errors.
-
-**Estimated Setup Time:** 2-3 hours (depending on internet speed and compilation time)  
-**Disk Space Required:** 12+ GB  
-**Supported OS:** Ubuntu 20.04 LTS, Ubuntu 22.04 LTS, Debian 11+
+> **Note:** This file contains outdated instructions. Please use `setup.sh` instead, which handles all tool installation automatically. See README.md for the latest setup instructions.
 
 ---
 
