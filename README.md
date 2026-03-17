@@ -102,12 +102,15 @@ sudo snap alias openxc7.xc7frames2bit xc7frames2bit
 ```
 
 **Chip database (chipdb) for Nexys A7-100T:**
+
+The chipdb is **bundled with the openXC7 snap package**. After installing the snap, it will be automatically available. If needed manually:
+
 ```bash
 mkdir -p ~/.local/share/nextpnr/xilinx/
-wget https://github.com/YosysHQ/nextpnr-xilinx/releases/download/v0.3/chipdb-xc7a100t.bin \
-    -O ~/.local/share/nextpnr/xilinx/chipdb-xc7a100t.bin
+# Chipdb is copied from snap during setup.sh, or download from openXC7 releases
 ```
-- **Resource:** https://github.com/YosysHQ/nextpnr-xilinx/releases/tag/v0.3
+
+- **Resource:** The chipdb is included in the [openXC7 snap package](https://github.com/openXC7/openXC7-snap/releases/tag/0.8.2)
 
 Verify: `nextpnr-xilinx --version`
 
