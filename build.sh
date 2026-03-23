@@ -278,11 +278,66 @@ sanitize_xdc_file() {
     local xdc_file="$1"
     local sanitized_file="${xdc_file}.sanitized"
 
-    perl -0pe 's/\{\s+([^{}]*?)\s+\}/{\1}/g' "${xdc_file}" > "${sanitized_file}"
+    python3 - "${xdc_file}" "${sanitized_file}" <<'PY'
+import re
+import sys
+
+src_path, dst_path = sys.argv[1:3]
+
+brace_space_re = re.compile(r'\{\s+([^{}]*?)\s+\}')
+set_property_dict_re = re.compile(
+    r'^(?P<indent>\s*)set_property\s+-dict\s+\{(?P<dict>[^}]*)\}\s+'
+    r'(?P<target>\[(?:get_ports|get_nets)\s+(?:\{[^}]+\}|\S+)\])\s*;?\s*$'
+)
+create_clock_re = re.compile(
+    r'^(?P<indent>\s*)create_clock\b(?P<body>.*?)(?P<target>\[(?:get_ports|get_nets)\s+(?:\{[^}]+\}|\S+)\])\s*;?\s*$'
+)
+period_re = re.compile(r'-period\s+([0-9]+(?:\.[0-9]+)?)')
+
+changed = False
+out_lines = []
+
+with open(src_path, "r", encoding="utf-8") as fh:
+    for raw_line in fh:
+        line = raw_line.rstrip("\n")
+        sanitized_line = brace_space_re.sub(r'{\1}', line)
+
+        match = set_property_dict_re.match(sanitized_line)
+        if match:
+            dict_tokens = match.group("dict").split()
+            if len(dict_tokens) >= 2 and len(dict_tokens) % 2 == 0:
+                indent = match.group("indent")
+                target = match.group("target")
+                for prop, value in zip(dict_tokens[0::2], dict_tokens[1::2]):
+                    out_lines.append(f"{indent}set_property {prop} {value} {target}\n")
+                if sanitized_line != line or len(dict_tokens) > 2:
+                    changed = True
+                continue
+
+        clock_match = create_clock_re.match(sanitized_line)
+        if clock_match and "-period" in clock_match.group("body"):
+            period_match = period_re.search(clock_match.group("body"))
+            if period_match:
+                simplified = (
+                    f"{clock_match.group('indent')}create_clock -period "
+                    f"{period_match.group(1)} {clock_match.group('target')}"
+                )
+                out_lines.append(simplified + "\n")
+                if simplified != line:
+                    changed = True
+                continue
+
+        out_lines.append(sanitized_line + "\n")
+        if sanitized_line != line:
+            changed = True
+
+with open(dst_path, "w", encoding="utf-8") as fh:
+    fh.writelines(out_lines)
+PY
 
     if ! cmp -s "${xdc_file}" "${sanitized_file}"; then
         mv "${sanitized_file}" "${xdc_file}"
-        echo "  Sanitized XDC brace spacing for nextpnr compatibility"
+        echo "  Normalized XDC for nextpnr compatibility"
     else
         rm -f "${sanitized_file}"
     fi

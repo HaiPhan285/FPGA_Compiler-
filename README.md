@@ -138,6 +138,15 @@ set_property -dict {PACKAGE_PIN J15 IOSTANDARD LVCMOS33} [get_ports {a}]
 
 `build.sh` auto-sanitizes the common brace-spacing mistake in the temporary copied XDC, but the source `.xdc` should still be written correctly.
 
+It also rewrites common Vivado-style XDC forms into the simpler syntax that `nextpnr-xilinx` accepts. For example, this is now accepted in new `app/<project>/constraints.xdc` files:
+
+```tcl
+set_property -dict {PACKAGE_PIN J15 IOSTANDARD LVCMOS33} [get_ports {a}]
+create_clock -add -name sys_clk_pin -period 10.000 -waveform {0 5} [get_ports {clk}]
+```
+
+During the build, those lines are normalized in the temporary copied XDC before `nextpnr-xilinx` runs.
+
 ## Easier debugging
 
 The build now does a **constraint pre-check before nextpnr**. If the selected `.xdc` is missing required entries, the script stops early and prints a direct message such as:
