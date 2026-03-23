@@ -24,11 +24,168 @@ SOURCE_DIR="."
 SV_FILE=""
 BUILD_ALL=false
 FLASH_MODE=false
+PROJECT_SET_BY_USER=false
+TOP_SET_BY_USER=false
+CONSTRAINTS_SET_BY_USER=false
+
+is_excluded_source_file() {
+    local basename="$1"
+    case "${basename}" in
+        tb_*|*_tb.sv|*_tb.v|sim.sv|sim.v|gates.v|defines.v|params.v)
+            return 0
+            ;;
+    esac
+    return 1
+}
+
+list_project_sources() {
+    local project_dir="$1"
+    while IFS= read -r src; do
+        if [ -s "${src}" ] && ! is_excluded_source_file "$(basename "${src}")"; then
+            printf '%s\n' "${src}"
+        fi
+    done < <(find "${project_dir}" -maxdepth 2 -type f \( -name "*.sv" -o -name "*.v" \) | sort)
+}
+
+list_project_constraints() {
+    local project_dir="$1"
+    find "${project_dir}" -maxdepth 2 -type f -name "*.xdc" -size +0c | sort
+}
+
+detect_module_name() {
+    local src_file="$1"
+    grep -oP '^\s*module\s+\K[a-zA-Z_][a-zA-Z0-9_]*' "${src_file}" | head -1
+}
 
 project_has_build_inputs() {
+    list_project_sources "${1}" | grep -q . &&
+    list_project_constraints "${1}" | grep -q .
+}
+
+recommend_source_file() {
     local project_dir="$1"
-    find "${project_dir}" -maxdepth 2 -type f \( -name "*.sv" -o -name "*.v" \) -size +0c | grep -q . &&
-    find "${project_dir}" -maxdepth 2 -type f -name "*.xdc" -size +0c | grep -q .
+    local project_name="$2"
+    local candidate
+    mapfile -t src_files < <(list_project_sources "${project_dir}")
+
+    if [ ${#src_files[@]} -eq 0 ]; then
+        return 1
+    fi
+
+    for candidate in "top.sv" "top.v" "${project_name}.sv" "${project_name}.v" "main.sv" "main.v"; do
+        for src in "${src_files[@]}"; do
+            if [ "$(basename "${src}")" = "${candidate}" ]; then
+                printf '%s\n' "${src}"
+                return 0
+            fi
+        done
+    done
+
+    if [ ${#src_files[@]} -eq 1 ]; then
+        printf '%s\n' "${src_files[0]}"
+        return 0
+    fi
+
+    return 1
+}
+
+prompt_for_source_file() {
+    local project_dir="$1"
+    mapfile -t src_files < <(list_project_sources "${project_dir}")
+
+    if [ ${#src_files[@]} -eq 0 ]; then
+        return 1
+    fi
+
+    if [ ${#src_files[@]} -eq 1 ]; then
+        printf '%s\n' "${src_files[0]}"
+        return 0
+    fi
+
+    echo "Multiple source files found. Select the top module file:"
+    for i in "${!src_files[@]}"; do
+        echo "  [$((i+1))] $(basename "${src_files[$i]}")"
+    done
+    read -rp "Enter number (default 1): " SRC_CHOICE
+    if [[ -z "${SRC_CHOICE}" ]]; then
+        SRC_CHOICE=1
+    fi
+
+    if [[ "${SRC_CHOICE}" =~ ^[0-9]+$ ]] && [ "${SRC_CHOICE}" -ge 1 ] && [ "${SRC_CHOICE}" -le ${#src_files[@]} ]; then
+        printf '%s\n' "${src_files[$((SRC_CHOICE-1))]}"
+        return 0
+    fi
+
+    return 1
+}
+
+recommend_constraints_file() {
+    local project_dir="$1"
+    local selected_src="$2"
+    local project_name="$3"
+    local selected_base
+    local candidate
+    mapfile -t xdc_files < <(list_project_constraints "${project_dir}")
+
+    if [ ${#xdc_files[@]} -eq 0 ]; then
+        return 1
+    fi
+
+    if [ -n "${selected_src}" ]; then
+        selected_base="$(basename "${selected_src}")"
+        selected_base="${selected_base%.*}"
+    else
+        selected_base=""
+    fi
+
+    for candidate in "${selected_base}.xdc" "${project_name}.xdc" "constraints.xdc" "top.xdc"; do
+        if [ "${candidate}" = ".xdc" ]; then
+            continue
+        fi
+        for xdc in "${xdc_files[@]}"; do
+            if [ "$(basename "${xdc}")" = "${candidate}" ]; then
+                printf '%s\n' "${xdc}"
+                return 0
+            fi
+        done
+    done
+
+    if [ ${#xdc_files[@]} -eq 1 ]; then
+        printf '%s\n' "${xdc_files[0]}"
+        return 0
+    fi
+
+    return 1
+}
+
+prompt_for_constraints_file() {
+    local project_dir="$1"
+    mapfile -t xdc_files < <(list_project_constraints "${project_dir}")
+
+    if [ ${#xdc_files[@]} -eq 0 ]; then
+        return 1
+    fi
+
+    if [ ${#xdc_files[@]} -eq 1 ]; then
+        printf '%s\n' "${xdc_files[0]}"
+        return 0
+    fi
+
+    echo "Multiple constraints files found. Select the XDC file:"
+    for i in "${!xdc_files[@]}"; do
+        echo "  [$((i+1))] $(basename "${xdc_files[$i]}")"
+    done
+    read -rp "Enter number (default 1): " XDC_CHOICE
+    if [[ -z "${XDC_CHOICE}" ]]; then
+        XDC_CHOICE=1
+    fi
+
+    if [[ "${XDC_CHOICE}" =~ ^[0-9]+$ ]] && [ "${XDC_CHOICE}" -ge 1 ] && [ "${XDC_CHOICE}" -le ${#xdc_files[@]} ]; then
+        printf '%s\n' "${xdc_files[$((XDC_CHOICE-1))]}"
+        return 0
+    fi
+
+    return 1
 }
 
 # If no arguments given, show interactive project selection menu
@@ -60,113 +217,39 @@ if [[ $# -eq 0 ]]; then
         SOURCE_DIR="$SELECTED_DIR"
         PROJECT=$(basename "$SELECTED_DIR")
 
-        # Find all potential top modules (Verilog files)
-        # Look in project root and common subdirectories like rtl/
-        mapfile -t SRC_FILES < <(find "$SELECTED_DIR" -maxdepth 2 \( -name "*.sv" -o -name "*.v" \) ! -name "gates.v" ! -name "defines.v" ! -name "params.v" | sort)
-        
-        if [ ${#SRC_FILES[@]} -eq 0 ]; then
-             # If filtered list is empty, fall back to all files
-             mapfile -t SRC_FILES < <(find "$SELECTED_DIR" -maxdepth 2 \( -name "*.sv" -o -name "*.v" \) | sort)
+        SELECTED_SRC="$(recommend_source_file "${SELECTED_DIR}" "${PROJECT}" || true)"
+        if [ -z "${SELECTED_SRC}" ]; then
+            SELECTED_SRC="$(prompt_for_source_file "${SELECTED_DIR}" || true)"
         fi
-
-        # Filter out empty source files
-        NON_EMPTY_SRC=()
-        for src in "${SRC_FILES[@]}"; do
-            if [ -s "$src" ]; then
-                NON_EMPTY_SRC+=("$src")
-            fi
-        done
-        if [ ${#NON_EMPTY_SRC[@]} -eq 0 ] && [ ${#SRC_FILES[@]} -gt 0 ]; then
-            echo -e "\033[0;31mError: All .sv/.v files in $PROJECT are empty. Please add your Verilog design before building.\033[0m"
+        if [ -z "${SELECTED_SRC}" ]; then
+            echo -e "\033[0;31mError: No usable .sv/.v files found in ${PROJECT}.\033[0m"
             exit 1
         fi
-        SRC_FILES=("${NON_EMPTY_SRC[@]}")
 
-        if [ ${#SRC_FILES[@]} -eq 0 ]; then
-             echo "No .sv/.v files found in $PROJECT"
-             exit 1
-        fi
-
-        # If multiple files exist, ask the user to pick the top module file
-        if [ ${#SRC_FILES[@]} -gt 1 ]; then
-            echo "Multiple source files found. Select the top module file:"
-            for i in "${!SRC_FILES[@]}"; do
-                echo "  [$((i+1))] $(basename "${SRC_FILES[$i]}")"
-            done
-            read -rp "Enter number (default 1): " SRC_CHOICE
-            
-            if [[ -z "$SRC_CHOICE" ]]; then
-                SRC_CHOICE=1
-            fi
-            
-            if [[ "$SRC_CHOICE" =~ ^[0-9]+$ ]] && [ "$SRC_CHOICE" -ge 1 ] && [ "$SRC_CHOICE" -le ${#SRC_FILES[@]} ]; then
-                SELECTED_SRC="${SRC_FILES[$((SRC_CHOICE-1))]}"
-            else
-                echo "Invalid selection."
-                exit 1
-            fi
+        DETECTED_MODULE="$(detect_module_name "${SELECTED_SRC}")"
+        if [ -n "${DETECTED_MODULE}" ]; then
+            TOP="${DETECTED_MODULE}"
         else
-            # Only one file, use it
-            SELECTED_SRC="${SRC_FILES[0]}"
-        fi
-
-        # Auto-detect top module name from the file content
-        DETECTED_MODULE=$(grep -oP '^\s*module\s+\K[a-zA-Z_][a-zA-Z0-9_]*' "$SELECTED_SRC" | head -1)
-        if [ -n "$DETECTED_MODULE" ]; then
-            TOP="$DETECTED_MODULE"
-        else
-            if [ ! -s "$SELECTED_SRC" ]; then
-                echo -e "\033[0;31mError: $(basename "$SELECTED_SRC") is empty. Please add your Verilog design before building.\033[0m"
+            if [ ! -s "${SELECTED_SRC}" ]; then
+                echo -e "\033[0;31mError: $(basename "${SELECTED_SRC}") is empty. Please add your Verilog design before building.\033[0m"
             else
-                echo -e "\033[0;31mError: No 'module' declaration found in $(basename "$SELECTED_SRC"). Please check your Verilog syntax.\033[0m"
+                echo -e "\033[0;31mError: No 'module' declaration found in $(basename "${SELECTED_SRC}"). Please check your Verilog syntax.\033[0m"
             fi
             exit 1
         fi
 
-        # Check that the constraints file has content
-        mapfile -t XDC_FILES < <(find "$SELECTED_DIR" -maxdepth 2 -name "*.xdc" | sort)
-        # Filter out empty XDC files
-        NON_EMPTY_XDC=()
-        for xdc in "${XDC_FILES[@]}"; do
-            if [ -s "$xdc" ]; then
-                NON_EMPTY_XDC+=("$xdc")
-            fi
-        done
-        if [ ${#NON_EMPTY_XDC[@]} -eq 0 ] && [ ${#XDC_FILES[@]} -gt 0 ]; then
-            echo -e "\033[0;31mError: All .xdc files in $PROJECT are empty. Please add pin constraints before building.\033[0m"
+        CONSTRAINTS="$(recommend_constraints_file "${SELECTED_DIR}" "${SELECTED_SRC}" "${PROJECT}" || true)"
+        if [ -z "${CONSTRAINTS}" ]; then
+            CONSTRAINTS="$(prompt_for_constraints_file "${SELECTED_DIR}" || true)"
+        fi
+        if [ -z "${CONSTRAINTS}" ]; then
+            echo -e "\033[0;31mError: No usable .xdc file found in ${PROJECT}.\033[0m"
             exit 1
-        fi
-        XDC_FILES=("${NON_EMPTY_XDC[@]}")
-        
-        if [ ${#XDC_FILES[@]} -eq 0 ]; then
-             echo "No .xdc file found in $PROJECT"
-             exit 1
-        fi
-
-        # If multiple XDC files exist, ask the user to pick one
-        if [ ${#XDC_FILES[@]} -gt 1 ]; then
-            echo "Multiple constraints files found. Select the XDC file:"
-            for i in "${!XDC_FILES[@]}"; do
-                echo "  [$((i+1))] $(basename "${XDC_FILES[$i]}")"
-            done
-            read -rp "Enter number (default 1): " XDC_CHOICE
-            
-            if [[ -z "$XDC_CHOICE" ]]; then
-                XDC_CHOICE=1
-            fi
-            
-            if [[ "$XDC_CHOICE" =~ ^[0-9]+$ ]] && [ "$XDC_CHOICE" -ge 1 ] && [ "$XDC_CHOICE" -le ${#XDC_FILES[@]} ]; then
-                CONSTRAINTS="${XDC_FILES[$((XDC_CHOICE-1))]}"
-            else
-                echo "Invalid selection."
-                exit 1
-            fi
-        else
-            CONSTRAINTS="${XDC_FILES[0]}"
         fi
 
         echo ""
-        echo "  Design file : ${TOP}.sv / ${TOP}.v"
+        echo "  Design file : $(basename "${SELECTED_SRC}")"
+        echo "  Top module  : ${TOP}"
         echo "  Constraints : $(basename "$CONSTRAINTS")"
     else
         echo "Invalid selection."
@@ -205,19 +288,164 @@ sanitize_xdc_file() {
     fi
 }
 
+print_log_errors() {
+    local logfile="$1"
+    local title="$2"
+    local log_excerpt
+
+    if [ ! -f "${logfile}" ]; then
+        return 0
+    fi
+
+    log_excerpt="$(grep -E '(^ERROR:|Assertion failure|Traceback|^fatal:|^FATAL:)' "${logfile}" | tail -20 || true)"
+    if [ -n "${log_excerpt}" ]; then
+        echo ""
+        echo -e "${YELLOW}${title}${NC}"
+        printf '%s\n' "${log_excerpt}"
+    fi
+}
+
+validate_constraints_file() {
+    local json_file="$1"
+    local top_module="$2"
+    local xdc_file="$3"
+
+    python3 - "${json_file}" "${top_module}" "${xdc_file}" <<'PY'
+import json
+import re
+import sys
+
+json_file, top_module, xdc_file = sys.argv[1:4]
+
+with open(json_file, "r", encoding="utf-8") as fh:
+    data = json.load(fh)
+
+module = data.get("modules", {}).get(top_module)
+if module is None:
+    print(f"Constraint pre-check skipped: top module '{top_module}' was not found in {json_file}.")
+    sys.exit(0)
+
+ports = {}
+for name, info in module.get("ports", {}).items():
+    width = len(info.get("bits", [])) or 1
+    ports[name] = width
+
+port_props = {}
+unknown_targets = set()
+line_re = re.compile(r'get_ports\s+(?:\{([^}]+)\}|(\S+))')
+bit_re = re.compile(r'^(?P<base>[A-Za-z_][A-Za-z0-9_]*)\[(?P<idx>\d+|\*)\]$')
+
+def ensure_port_entry(name):
+    if name not in port_props:
+        port_props[name] = {"all": set(), "bits": {}}
+    return port_props[name]
+
+with open(xdc_file, "r", encoding="utf-8") as fh:
+    for raw_line in fh:
+        line = raw_line.split("#", 1)[0].strip()
+        if not line or "get_ports" not in line:
+            continue
+
+        match = line_re.search(line)
+        if not match:
+            continue
+
+        target = (match.group(1) or match.group(2) or "").strip()
+        if not target:
+            continue
+
+        props = set()
+        if "PACKAGE_PIN" in line:
+            props.add("PACKAGE_PIN")
+        if "IOSTANDARD" in line:
+            props.add("IOSTANDARD")
+        if not props:
+            continue
+
+        bit_match = bit_re.match(target)
+        if bit_match:
+            port_name = bit_match.group("base")
+            bit_idx = bit_match.group("idx")
+        else:
+            port_name = target
+            bit_idx = "*"
+
+        if port_name not in ports:
+            unknown_targets.add(target)
+            continue
+
+        entry = ensure_port_entry(port_name)
+        if bit_idx == "*":
+            entry["all"].update(props)
+        else:
+            idx = int(bit_idx)
+            entry["bits"].setdefault(idx, set()).update(props)
+
+missing_any = []
+missing_package = []
+missing_iostandard = []
+
+for port_name, width in ports.items():
+    entry = port_props.get(port_name, {"all": set(), "bits": {}})
+    for bit in range(width):
+        props = set(entry["all"])
+        props.update(entry["bits"].get(bit, set()))
+        label = port_name if width == 1 else f"{port_name}[{bit}]"
+        if not props:
+            missing_any.append(label)
+        if "PACKAGE_PIN" not in props:
+            missing_package.append(label)
+        if "IOSTANDARD" not in props:
+            missing_iostandard.append(label)
+
+def format_items(items):
+    if not items:
+        return ""
+    if len(items) <= 10:
+        return ", ".join(items)
+    head = ", ".join(items[:10])
+    return f"{head}, ... ({len(items)} total)"
+
+if missing_any or missing_package or missing_iostandard:
+    print(f"Constraint pre-check failed for top module '{top_module}'.")
+    print(f"XDC file: {xdc_file}")
+    if missing_any:
+        print(f"- Missing any XDC entry: {format_items(missing_any)}")
+    if missing_package:
+        print(f"- Missing PACKAGE_PIN: {format_items(missing_package)}")
+    if missing_iostandard:
+        print(f"- Missing IOSTANDARD: {format_items(missing_iostandard)}")
+    if unknown_targets:
+        unknown_list = sorted(unknown_targets)
+        print(f"- XDC entries not present in this top module: {format_items(unknown_list)}")
+    print("Example fix:")
+    example_target = missing_iostandard[0] if missing_iostandard else missing_package[0]
+    print(f"  set_property -dict {{PACKAGE_PIN <PIN> IOSTANDARD LVCMOS33}} [get_ports {{{example_target}}}]")
+    sys.exit(1)
+
+if unknown_targets:
+    print(f"Constraint pre-check passed, but the XDC has extra entries not in '{top_module}': {format_items(sorted(unknown_targets))}")
+else:
+    print("Constraint pre-check passed")
+PY
+}
+
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
         --top)
             TOP="$2"
+            TOP_SET_BY_USER=true
             shift 2
             ;;
         --constraints|--contraints)
             CONSTRAINTS="$2"
+            CONSTRAINTS_SET_BY_USER=true
             shift 2
             ;;
         --project)
             PROJECT="$2"
+            PROJECT_SET_BY_USER=true
             shift 2
             ;;
         --source-dir)
@@ -268,7 +496,11 @@ if [ -n "$SOURCE_DIR" ] && [ -d "$SOURCE_DIR" ]; then
     if [[ "$SOURCE_DIR" != /* ]]; then
         SOURCE_DIR="$(pwd)/$SOURCE_DIR"
     fi
-    mapfile -t SRC_FILES < <(find "$SOURCE_DIR" -maxdepth 2 \( -name "*.sv" -o -name "*.v" \) ! -name "gates.v" ! -name "defines.v" ! -name "params.v" | sort)
+    if [ "${PROJECT_SET_BY_USER}" = false ] && [ "${SOURCE_DIR}" != "." ]; then
+        PROJECT="$(basename "${SOURCE_DIR}")"
+    fi
+
+    mapfile -t SRC_FILES < <(list_project_sources "$SOURCE_DIR")
     # Set SELECTED_DIR for command-line mode
     SELECTED_DIR="$SOURCE_DIR"
     
@@ -282,6 +514,22 @@ if [ -n "$SOURCE_DIR" ] && [ -d "$SOURCE_DIR" ]; then
                 break
             fi
         done
+    fi
+
+    if [ -z "${SELECTED_SRC}" ]; then
+        SELECTED_SRC="$(recommend_source_file "${SOURCE_DIR}" "${PROJECT}" || true)"
+    fi
+
+    if [ -z "${SELECTED_SRC}" ] && [ ${#SRC_FILES[@]} -eq 1 ]; then
+        SELECTED_SRC="${SRC_FILES[0]}"
+    fi
+
+    if [ -z "${TOP}" ] && [ -n "${SELECTED_SRC}" ]; then
+        TOP="$(detect_module_name "${SELECTED_SRC}")"
+    fi
+
+    if [ -z "${CONSTRAINTS}" ]; then
+        CONSTRAINTS="$(recommend_constraints_file "${SOURCE_DIR}" "${SELECTED_SRC}" "${PROJECT}" || true)"
     fi
 fi
 
@@ -307,45 +555,50 @@ if [ "$BUILD_ALL" = true ]; then
         fi
         echo -e "${GREEN}=== Project: ${proj_name} ===${NC}"
 
-        # Pick source file
-        mapfile -t SRC_FILES < <(find "$proj_dir" -maxdepth 2 \( -name "*.sv" -o -name "*.v" \) | sort)
+        SELECTED_SRC="$(recommend_source_file "${proj_dir}" "${proj_name}" || true)"
+        if [ -z "${SELECTED_SRC}" ]; then
+            mapfile -t SRC_FILES < <(list_project_sources "${proj_dir}")
+        else
+            SRC_FILES=("${SELECTED_SRC}")
+        fi
+
         if [ ${#SRC_FILES[@]} -eq 0 ]; then
             echo -e "${RED}  Skipping ${proj_name}: no .sv/.v source found${NC}"
             FAILED+=("$proj_name")
             continue
         fi
-        echo "  Select design file:"
-        for i in "${!SRC_FILES[@]}"; do
-            echo "    [$((i+1))] $(basename "${SRC_FILES[$i]}")"
-        done
-        read -rp "  Enter number: " SRC_CHOICE
-        if ! [[ "$SRC_CHOICE" =~ ^[0-9]+$ ]] || [ "$SRC_CHOICE" -lt 1 ] || [ "$SRC_CHOICE" -gt ${#SRC_FILES[@]} ]; then
-            echo -e "${RED}  Invalid selection, skipping ${proj_name}${NC}"
+
+        if [ -z "${SELECTED_SRC}" ]; then
+            SELECTED_SRC="${SRC_FILES[0]}"
+            echo -e "${YELLOW}  Warning:${NC} ambiguous source files, defaulting to $(basename "${SELECTED_SRC}")"
+        fi
+        detected_top="$(detect_module_name "${SELECTED_SRC}")"
+        if [ -z "${detected_top}" ]; then
+            echo -e "${RED}  Skipping ${proj_name}: could not detect a module in $(basename "${SELECTED_SRC}")${NC}"
             FAILED+=("$proj_name")
             continue
         fi
-        SELECTED_SRC="${SRC_FILES[$((SRC_CHOICE-1))]}"
-        detected_top=$(basename "$SELECTED_SRC" .sv); detected_top=$(basename "$detected_top" .v)
 
-        # Pick constraints file
-        mapfile -t XDC_FILES < <(find "$proj_dir" -maxdepth 2 -name "*.xdc" | sort)
+        detected_constraints="$(recommend_constraints_file "${proj_dir}" "${SELECTED_SRC}" "${proj_name}" || true)"
+        if [ -z "${detected_constraints}" ]; then
+            mapfile -t XDC_FILES < <(list_project_constraints "${proj_dir}")
+        else
+            XDC_FILES=("${detected_constraints}")
+        fi
+
         if [ ${#XDC_FILES[@]} -eq 0 ]; then
             echo -e "${RED}  Skipping ${proj_name}: no .xdc constraints found${NC}"
             FAILED+=("$proj_name")
             continue
         fi
-        echo "  Select constraints file:"
-        for i in "${!XDC_FILES[@]}"; do
-            echo "    [$((i+1))] $(basename "${XDC_FILES[$i]}")"
-        done
-        read -rp "  Enter number: " XDC_CHOICE
-        if ! [[ "$XDC_CHOICE" =~ ^[0-9]+$ ]] || [ "$XDC_CHOICE" -lt 1 ] || [ "$XDC_CHOICE" -gt ${#XDC_FILES[@]} ]; then
-            echo -e "${RED}  Invalid selection, skipping ${proj_name}${NC}"
-            FAILED+=("$proj_name")
-            continue
-        fi
-        detected_xdc=$(basename "${XDC_FILES[$((XDC_CHOICE-1))]}")
 
+        if [ -z "${detected_constraints}" ]; then
+            detected_constraints="${XDC_FILES[0]}"
+            echo -e "${YELLOW}  Warning:${NC} ambiguous XDC files, defaulting to $(basename "${detected_constraints}")"
+        fi
+        detected_xdc=$(basename "${detected_constraints}")
+
+        echo "  Design file: $(basename "${SELECTED_SRC}")"
         echo "  Top module : $detected_top"
         echo "  Constraints: $detected_xdc"
         echo "  Project    : $proj_name"
@@ -353,7 +606,7 @@ if [ "$BUILD_ALL" = true ]; then
         if "$BUILD_SCRIPT_DIR/build.sh" \
             --source-dir "$proj_dir" \
             --top "$detected_top" \
-            --constraints "$detected_xdc" \
+            --constraints "${detected_constraints}" \
             --project "$proj_name"; then
             echo -e "${GREEN}  ✓ ${proj_name} built successfully${NC}"
         else
@@ -401,6 +654,12 @@ fi
 
 # Auto-detect top module if not specified
 if [ -z "$TOP" ]; then
+    if [ -n "${SELECTED_SRC:-}" ]; then
+        TOP="$(detect_module_name "${SELECTED_SRC}")"
+    fi
+fi
+
+if [ -z "${TOP}" ]; then
     TOP="$PROJECT"
 fi
 
@@ -411,14 +670,12 @@ echo ""
 
 # Auto-detect constraints file if not specified
 if [ -z "$CONSTRAINTS" ]; then
-    if [ -f "${PROJECT}.xdc" ]; then
-        CONSTRAINTS="${PROJECT}.xdc"
-    elif [ -f "constraints.xdc" ]; then
-        CONSTRAINTS="constraints.xdc"
-    else
-        echo -e "${RED}Error: No constraints file found. Use --constraints to specify.${NC}"
-        exit 1
-    fi
+    CONSTRAINTS="$(recommend_constraints_file "$(pwd)" "${SELECTED_SRC:-}" "${PROJECT}" || true)"
+fi
+
+if [ -z "$CONSTRAINTS" ]; then
+    echo -e "${RED}Error: No constraints file found. Use --constraints to specify.${NC}"
+    exit 1
 fi
 
 PART="xc7a100tcsg324-1"
@@ -572,12 +829,22 @@ YOSYS_CMD="${YOSYS_CMD}; hierarchy -check -top ${TOP}; synth_xilinx -family xc7 
 yosys -p "${YOSYS_CMD}" 2>&1 | tee ${BUILD_DIR}/yosys.log
 
 if [ ! -f "${BUILD_DIR}/${PROJECT}.json" ]; then
+    print_log_errors "${BUILD_DIR}/yosys.log" "Yosys errors"
     echo -e "${RED}Error: Synthesis failed. Check yosys.log for details.${NC}"
     exit 1
 fi
 
 echo ""
-echo -e "${YELLOW}Step 2: Place and Route with nextpnr-xilinx${NC}"
+echo -e "${YELLOW}Step 2: Constraint pre-check${NC}"
+constraint_check_output="$(validate_constraints_file "${BUILD_DIR}/${PROJECT}.json" "${TOP}" "${CONSTRAINTS}" 2>&1 || true)"
+printf '%s\n' "${constraint_check_output}" | tee "${BUILD_DIR}/constraints.log"
+if printf '%s\n' "${constraint_check_output}" | grep -q '^Constraint pre-check failed'; then
+    echo -e "${RED}Error: Constraint validation failed before place-and-route.${NC}"
+    exit 1
+fi
+
+echo ""
+echo -e "${YELLOW}Step 3: Place and Route with nextpnr-xilinx${NC}"
 
 # Try to find chipdb
 CHIPDB_PATHS=(
@@ -661,15 +928,28 @@ run_tool_binary "${NEXTPNR_XILINX_BIN}" \
     --verbose 2>&1 | tee ${BUILD_DIR}/nextpnr.log
 
 if [ ! -f "${BUILD_DIR}/${PROJECT}.fasm" ]; then
+    print_log_errors "${BUILD_DIR}/nextpnr.log" "nextpnr errors"
     if grep -q "Assertion failure: str.back() == '}'" "${BUILD_DIR}/nextpnr.log" 2>/dev/null; then
         echo -e "${YELLOW}Hint:${NC} nextpnr-xilinx rejected the XDC syntax. Remove spaces directly inside braces, e.g. use {clk} instead of { clk }."
+    fi
+    if grep -q "has no IOSTANDARD property" "${BUILD_DIR}/nextpnr.log" 2>/dev/null; then
+        missing_ports="$(sed -n 's/.*ERROR: port \(.*\) of type PAD has no IOSTANDARD property.*/\1/p' "${BUILD_DIR}/nextpnr.log" | paste -sd ', ' -)"
+        if [ -n "${missing_ports}" ]; then
+            echo -e "${YELLOW}Hint:${NC} Add 'IOSTANDARD LVCMOS33' for: ${missing_ports}"
+        fi
+    fi
+    if grep -q "has no PACKAGE_PIN property" "${BUILD_DIR}/nextpnr.log" 2>/dev/null; then
+        missing_ports="$(sed -n 's/.*ERROR: port \(.*\) of type PAD has no PACKAGE_PIN property.*/\1/p' "${BUILD_DIR}/nextpnr.log" | paste -sd ', ' -)"
+        if [ -n "${missing_ports}" ]; then
+            echo -e "${YELLOW}Hint:${NC} Add 'PACKAGE_PIN <PIN>' for: ${missing_ports}"
+        fi
     fi
     echo -e "${RED}Error: Place and route failed. Check nextpnr.log for details.${NC}"
     exit 1
 fi
 
 echo ""
-echo -e "${YELLOW}Step 3: Generate FASM to Frames${NC}"
+echo -e "${YELLOW}Step 4: Generate FASM to Frames${NC}"
 if [ "${XRAY_FASM2FRAMES_MODE}" = "exec" ]; then
     run_tool_binary "${XRAY_FASM2FRAMES}" --db-root "${XRAY_DATABASE_DIR}/${XRAY_DATABASE}" --part "${PART}" "${BUILD_DIR}/${PROJECT}.fasm" "${BUILD_DIR}/${PROJECT}.frames"
 else
@@ -677,7 +957,7 @@ else
 fi
 
 echo ""
-echo -e "${YELLOW}Step 4: Generate Bitstream${NC}"
+echo -e "${YELLOW}Step 5: Generate Bitstream${NC}"
 run_tool_binary "${XRAY_XC7FRAMES2BIT}" \
     --part_file "${XRAY_PART_YAML}" \
     --part_name "${PART}" \
