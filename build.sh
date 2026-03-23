@@ -57,6 +57,123 @@ detect_module_name() {
     grep -oP '^\s*module\s+\K[a-zA-Z_][a-zA-Z0-9_]*' "${src_file}" | head -1
 }
 
+check_source_constraints_compatibility() {
+    local src_file="$1"
+    local top_module="$2"
+    local xdc_file="$3"
+
+    python3 - "${src_file}" "${top_module}" "${xdc_file}" <<'PY'
+import re
+import sys
+
+src_file, top_module, xdc_file = sys.argv[1:4]
+
+with open(src_file, "r", encoding="utf-8") as fh:
+    src_text = fh.read()
+
+with open(xdc_file, "r", encoding="utf-8") as fh:
+    xdc_text = fh.read()
+
+module_match = re.search(
+    rf'^\s*module\s+{re.escape(top_module)}\b(?P<body>.*?)(?:^\s*endmodule\b)',
+    src_text,
+    re.MULTILINE | re.DOTALL,
+)
+if module_match is None:
+    print(f"Error: top module '{top_module}' was not found in {src_file}.")
+    sys.exit(1)
+
+module_text = module_match.group(0)
+ports = []
+seen = set()
+decl_re = re.compile(
+    r'^\s*(?:input|output|inout)\b(?:\s+(?:wire|reg|logic|signed))*'
+    r'(?:\s*\[[^]]+\])?\s+(.*?);',
+    re.MULTILINE,
+)
+header_re = re.compile(
+    rf'^\s*module\s+{re.escape(top_module)}\b.*?\((?P<header>.*?)\)\s*;',
+    re.MULTILINE | re.DOTALL,
+)
+ansi_re = re.compile(
+    r'\b(?:input|output|inout)\b(?:\s+(?:wire|reg|logic|signed))*'
+    r'(?:\s*\[[^]]+\])?\s+([A-Za-z_][A-Za-z0-9_]*)'
+)
+name_re = re.compile(r'[A-Za-z_][A-Za-z0-9_]*')
+
+for decl_match in decl_re.finditer(module_text):
+    names_part = decl_match.group(1)
+    names_part = re.sub(r'=\s*[^,;]+', '', names_part)
+    for name in name_re.findall(names_part):
+        if name not in seen:
+            seen.add(name)
+            ports.append(name)
+
+if not ports:
+    header_match = header_re.search(module_text)
+    if header_match is not None:
+        for name in ansi_re.findall(header_match.group("header")):
+            if name not in seen:
+                seen.add(name)
+                ports.append(name)
+
+if not ports:
+    print(f"Warning: could not extract ports for top module '{top_module}' from {src_file}.")
+    sys.exit(0)
+
+xdc_targets = []
+line_re = re.compile(r'get_ports\s+(?:\{([^}]+)\}|(\S+))')
+bit_re = re.compile(r'^(?P<base>[A-Za-z_][A-Za-z0-9_]*)\[(?P<idx>\d+|\*)\]$')
+
+for raw_line in xdc_text.splitlines():
+    line = raw_line.split("#", 1)[0].strip()
+    if not line or "get_ports" not in line:
+        continue
+    match = line_re.search(line)
+    if not match:
+        continue
+    target = (match.group(1) or match.group(2) or "").strip()
+    if not target:
+        continue
+    bit_match = bit_re.match(target)
+    normalized = bit_match.group("base") if bit_match else target
+    if normalized not in xdc_targets:
+        xdc_targets.append(normalized)
+
+port_set = set(ports)
+xdc_set = set(xdc_targets)
+common = sorted(port_set & xdc_set)
+missing_from_xdc = [name for name in ports if name not in xdc_set]
+unknown_in_xdc = [name for name in xdc_targets if name not in port_set]
+
+if common:
+    print(
+        f"Source/XDC compatibility: top '{top_module}' shares "
+        f"{len(common)} constrained port(s) with {xdc_file}."
+    )
+    sys.exit(0)
+
+def format_items(items):
+    if not items:
+        return ""
+    if len(items) <= 10:
+        return ", ".join(items)
+    return f"{', '.join(items[:10])}, ... ({len(items)} total)"
+
+print(f"Error: selected source and XDC do not describe the same top-level interface.")
+print(f"Source file: {src_file}")
+print(f"Top module : {top_module}")
+print(f"XDC file   : {xdc_file}")
+print(f"Source ports: {format_items(ports)}")
+if missing_from_xdc:
+    print(f"Ports missing from XDC: {format_items(missing_from_xdc)}")
+if unknown_in_xdc:
+    print(f"XDC ports not present in top module: {format_items(unknown_in_xdc)}")
+print("Fix: choose the correct top-level HDL file or the matching .xdc file.")
+sys.exit(1)
+PY
+}
+
 project_has_build_inputs() {
     list_project_sources "${1}" | grep -q . &&
     list_project_constraints "${1}" | grep -q .
@@ -836,6 +953,10 @@ fi
 
 if [ -z "$CONSTRAINTS" ]; then
     echo -e "${RED}Error: No constraints file found. Use --constraints to specify.${NC}"
+    exit 1
+fi
+
+if ! check_source_constraints_compatibility "${SELECTED_SRC}" "${TOP}" "${CONSTRAINTS}"; then
     exit 1
 fi
 
