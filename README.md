@@ -177,6 +177,11 @@ On tool failures, the script also:
 
 `doctor.sh --smoke` is the fastest way to confirm that both `.v` and `.sv` projects build correctly on the current machine.
 
+JTAG init failed with: unable to open ftdi device:
+ usbipd list: 
+ Find the USB Serial Converter A, USB Serial Converter B
+usbipd attach --wsl --busid
+
 ## Windows users without WSL
 
 This repo’s local build flow is **Linux-first** because the openXC7 toolchain used here is installed through Linux-oriented paths such as the Ubuntu snap bundle and Linux binaries.
