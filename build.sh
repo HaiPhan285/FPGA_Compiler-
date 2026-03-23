@@ -42,14 +42,14 @@ list_project_sources() {
     local project_dir="$1"
     while IFS= read -r src; do
         if [ -s "${src}" ] && ! is_excluded_source_file "$(basename "${src}")"; then
-            printf '%s\n' "${src}"
+            echo "${src}"
         fi
-    done < <(find "${project_dir}" -maxdepth 2 -type f \( -name "*.sv" -o -name "*.v" \) | sort)
+    done < <(find "${project_dir}" -maxdepth 1 -type f \( -name "*.sv" -o -name "*.v" \) | sort)
 }
 
 list_project_constraints() {
     local project_dir="$1"
-    find "${project_dir}" -maxdepth 2 -type f -name "*.xdc" -size +0c | sort
+    find "${project_dir}" -maxdepth 1 -type f -name "*.xdc" -size +0c | sort
 }
 
 detect_module_name() {
@@ -358,6 +358,112 @@ print_log_errors() {
         echo -e "${YELLOW}${title}${NC}"
         printf '%s\n' "${log_excerpt}"
     fi
+}
+
+generate_nextpnr_wrapper() {
+    local json_file="$1"
+    local original_top="$2"
+    local xdc_file="$3"
+    local wrapper_file="$4"
+    local wrapper_xdc="$5"
+
+    python3 - "${json_file}" "${original_top}" "${xdc_file}" "${wrapper_file}" "${wrapper_xdc}" <<'PY'
+import json
+import re
+import sys
+
+json_file, original_top, xdc_file, wrapper_file, wrapper_xdc = sys.argv[1:6]
+
+wrapper_top = "__nextpnr_top_wrapper"
+bit_target_re = re.compile(r'get_ports\s+(?P<braced>\{(?P<inner>[^}]+)\}|(?P<plain>\S+))')
+bit_name_re = re.compile(r'^(?P<base>[A-Za-z_][A-Za-z0-9_]*)\[(?P<idx>\d+)\]$')
+
+with open(json_file, "r", encoding="utf-8") as fh:
+    data = json.load(fh)
+
+module = data.get("modules", {}).get(original_top)
+if module is None:
+    sys.exit(1)
+
+ports = []
+needs_wrapper = False
+for name, info in module.get("ports", {}).items():
+    direction = info.get("direction", "input")
+    width = len(info.get("bits", [])) or 1
+    if width > 1:
+        needs_wrapper = True
+    ports.append((name, direction, width))
+
+if not needs_wrapper:
+    print("none")
+    sys.exit(0)
+
+wrapper_ports = []
+decl_lines = []
+assign_lines = []
+instance_lines = []
+
+for name, direction, width in ports:
+    if width == 1:
+        wrapper_ports.append((direction, name))
+        instance_lines.append(f"        .{name}({name})")
+        continue
+
+    scalar_names = [f"{name}__{idx}" for idx in range(width)]
+    for scalar_name in scalar_names:
+        wrapper_ports.append((direction, scalar_name))
+
+    if direction == "input":
+        decl_lines.append(f"    wire [{width-1}:0] {name} = " + "{" + ", ".join(reversed(scalar_names)) + "};")
+    elif direction == "output":
+        decl_lines.append(f"    wire [{width-1}:0] {name};")
+        for idx, scalar_name in enumerate(scalar_names):
+            assign_lines.append(f"    assign {scalar_name} = {name}[{idx}];")
+    elif direction == "inout":
+        decl_lines.append(f"    wire [{width-1}:0] {name};")
+        for idx, scalar_name in enumerate(scalar_names):
+            assign_lines.append(f"    assign {name}[{idx}] = {scalar_name};")
+            assign_lines.append(f"    assign {scalar_name} = {name}[{idx}];")
+    else:
+        raise SystemExit(f"Unsupported direction '{direction}' for port '{name}'")
+
+    instance_lines.append(f"        .{name}({name})")
+
+with open(wrapper_file, "w", encoding="utf-8") as fh:
+    fh.write(f"module {wrapper_top} (\n")
+    for idx, (direction, name) in enumerate(wrapper_ports):
+        comma = "," if idx < len(wrapper_ports) - 1 else ""
+        fh.write(f"    {direction} wire {name}{comma}\n")
+    fh.write(");\n")
+    if decl_lines:
+        fh.write("\n")
+        for line in decl_lines:
+            fh.write(line + "\n")
+    fh.write(f"\n    {original_top} u_top (\n")
+    for idx, line in enumerate(instance_lines):
+        comma = "," if idx < len(instance_lines) - 1 else ""
+        fh.write(line + comma + "\n")
+    fh.write("    );\n")
+    if assign_lines:
+        fh.write("\n")
+        for line in assign_lines:
+            fh.write(line + "\n")
+    fh.write("endmodule\n")
+
+with open(xdc_file, "r", encoding="utf-8") as src, open(wrapper_xdc, "w", encoding="utf-8") as dst:
+    for raw_line in src:
+        def repl(match):
+            target = match.group("inner") or match.group("plain") or ""
+            target = target.strip()
+            bit_match = bit_name_re.match(target)
+            if not bit_match:
+                return match.group(0)
+            return f"get_ports {{{bit_match.group('base')}__{bit_match.group('idx')}}}"
+
+        dst.write(bit_target_re.sub(repl, raw_line))
+
+print(wrapper_top)
+PY
 }
 
 validate_constraints_file() {
@@ -872,14 +978,34 @@ SELECTED_BASENAME=$(basename "$SELECTED_SRC")
 SELECTED_NAME="${SELECTED_BASENAME%.*}"
 SV_FILES=$(ls -1 *.sv 2>/dev/null | grep -v -E '^(tb_.*|.*_tb\.sv|sim\.sv)$' | grep -v "^${SELECTED_BASENAME}$" | grep -v "^${SELECTED_NAME}.sv$" | tr '\n' ' ')
 V_FILES=$(ls -1 *.v 2>/dev/null | grep -v -E '^(tb_.*|.*_tb\.v|sim\.v)$' | grep -v "^${SELECTED_BASENAME}$" | grep -v "^${SELECTED_NAME}.v$" | tr '\n' ' ')
-YOSYS_CMD="read_verilog -sv ${SELECTED_BASENAME}"
+YOSYS_READ_CMD="read_verilog -sv ${SELECTED_BASENAME}"
 if [ -n "$SV_FILES" ]; then
-    YOSYS_CMD="${YOSYS_CMD}; read_verilog -sv ${SV_FILES}"
+    YOSYS_READ_CMD="${YOSYS_READ_CMD}; read_verilog -sv ${SV_FILES}"
 fi
 if [ -n "$V_FILES" ]; then
-    YOSYS_CMD="${YOSYS_CMD}; read_verilog ${V_FILES}"
+    YOSYS_READ_CMD="${YOSYS_READ_CMD}; read_verilog ${V_FILES}"
 fi
-YOSYS_CMD="${YOSYS_CMD}; hierarchy -check -top ${TOP}; synth_xilinx -family xc7 -top ${TOP}; write_json \"${BUILD_DIR}/${PROJECT}.json\""
+
+PRESCAN_JSON="${BUILD_DIR}/${PROJECT}.ports.json"
+SYNTH_TOP="${TOP}"
+PNR_CONSTRAINTS="${CONSTRAINTS}"
+WRAPPER_FILE="${BUILD_DIR}/__nextpnr_wrapper.v"
+WRAPPER_XDC="${BUILD_DIR}/__nextpnr_wrapper.xdc"
+
+if yosys -q -p "${YOSYS_READ_CMD}; hierarchy -check -top ${TOP}; proc; opt; write_json \"${PRESCAN_JSON}\"" >/dev/null 2>&1; then
+    GENERATED_WRAPPER_TOP="$(generate_nextpnr_wrapper "${PRESCAN_JSON}" "${TOP}" "${CONSTRAINTS}" "${WRAPPER_FILE}" "${WRAPPER_XDC}" || true)"
+    if [ -n "${GENERATED_WRAPPER_TOP}" ] && [ "${GENERATED_WRAPPER_TOP}" != "none" ] && [ -f "${WRAPPER_FILE}" ] && [ -f "${WRAPPER_XDC}" ]; then
+        SYNTH_TOP="${GENERATED_WRAPPER_TOP}"
+        PNR_CONSTRAINTS="${WRAPPER_XDC}"
+        echo "  Generated temporary scalar wrapper for nextpnr compatibility"
+    fi
+fi
+
+YOSYS_CMD="${YOSYS_READ_CMD}"
+if [ "${SYNTH_TOP}" != "${TOP}" ] && [ -f "${WRAPPER_FILE}" ]; then
+    YOSYS_CMD="${YOSYS_CMD}; read_verilog -sv $(basename "${WRAPPER_FILE}")"
+fi
+YOSYS_CMD="${YOSYS_CMD}; hierarchy -check -top ${SYNTH_TOP}; synth_xilinx -family xc7 -flatten -nowidelut -nocarry -top ${SYNTH_TOP}; write_json \"${BUILD_DIR}/${PROJECT}.json\""
 
 yosys -p "${YOSYS_CMD}" 2>&1 | tee ${BUILD_DIR}/yosys.log
 
@@ -891,7 +1017,7 @@ fi
 
 echo ""
 echo -e "${YELLOW}Step 2: Constraint pre-check${NC}"
-constraint_check_output="$(validate_constraints_file "${BUILD_DIR}/${PROJECT}.json" "${TOP}" "${CONSTRAINTS}" 2>&1 || true)"
+constraint_check_output="$(validate_constraints_file "${BUILD_DIR}/${PROJECT}.json" "${SYNTH_TOP}" "${PNR_CONSTRAINTS}" 2>&1 || true)"
 printf '%s\n' "${constraint_check_output}" | tee "${BUILD_DIR}/constraints.log"
 if printf '%s\n' "${constraint_check_output}" | grep -q '^Constraint pre-check failed'; then
     echo -e "${RED}Error: Constraint validation failed before place-and-route.${NC}"
@@ -978,7 +1104,7 @@ echo ""
 run_tool_binary "${NEXTPNR_XILINX_BIN}" \
     --chipdb "${CHIPDB_FOUND}" \
     --json "${BUILD_DIR}/${PROJECT}.json" \
-    --xdc "${CONSTRAINTS}" \
+    --xdc "${PNR_CONSTRAINTS}" \
     --fasm "${BUILD_DIR}/${PROJECT}.fasm" \
     --verbose 2>&1 | tee ${BUILD_DIR}/nextpnr.log
 
