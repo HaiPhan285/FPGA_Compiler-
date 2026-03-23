@@ -16,13 +16,17 @@ Takes your Verilog/SystemVerilog design and produces a `.bit` file you can flash
 ## ⚡ TL;DR — get building in 3 steps
 
 ```bash
+# Option A: clone with git
 git clone https://github.com/HaiPhan285/FPGA_Compiler-.git
+
+# Option B: download the GitHub ZIP and extract it, then:
 cd FPGA_Compiler-
 chmod +x setup.sh && ./setup.sh   # one-time setup (~5 min, needs internet)
 ./build.sh                         # interactive menu to pick & build a project
 ```
 
 > **Requirements:** Linux (Ubuntu 22.04/24.04) or WSL2. `sudo` access needed for `setup.sh`.
+> `setup.sh` handles the toolchain setup. You do not need to manually clone `prjxray` or `prjxray-db`.
 
 ---
 
@@ -41,6 +45,8 @@ FPGA_Compiler-/
 │   └── chapter 6/
 └── .tools/           ← auto-populated by setup.sh (gitignored)
 ```
+
+`.tools/` is only used as a fallback cache when the installed `openxc7` bundle does not already provide the required bitstream tools.
 
 Each project folder must contain:
 - At least one `.sv` or `.v` source file with a `module` declaration
@@ -103,16 +109,23 @@ sudo snap alias openxc7.xc7frames2bit xc7frames2bit
 
 **Chip database (chipdb) for Nexys A7-100T:**
 
-The chipdb is **bundled with the openXC7 snap package**. After installing the snap, it will be automatically available. If needed manually:
+Some `openxc7` installs include a prebuilt chipdb. If it is missing, `setup.sh` and `build.sh` now generate it automatically from the installed openXC7 bundle. Manual one-time generation is:
 
 ```bash
 mkdir -p ~/.local/share/nextpnr/xilinx/
-# Chipdb is copied from snap during setup.sh, or download from openXC7 releases
+python3 /snap/openxc7/current/opt/nextpnr-xilinx/python/bbaexport.py \
+    --device xc7a100tcsg324-1 \
+    --bba /tmp/chipdb-xc7a100t.bba
+/snap/openxc7/current/usr/bin/bbasm -l /tmp/chipdb-xc7a100t.bba \
+    ~/.local/share/nextpnr/xilinx/chipdb-xc7a100t.bin
 ```
 
-- **Resource:** The chipdb is included in the [openXC7 snap package](https://github.com/openXC7/openXC7-snap/releases/tag/0.8.2)
+Verify the direct binary if the snap wrapper is problematic:
 
-Verify: `nextpnr-xilinx --version`
+```bash
+LD_LIBRARY_PATH=/snap/openxc7/current/usr/lib/x86_64-linux-gnu:/snap/openxc7/current/lib/x86_64-linux-gnu:/snap/openxc7/current/usr/lib:/snap/openxc7/current/lib \
+    /snap/openxc7/current/usr/bin/nextpnr-xilinx --help | head -3
+```
 
 #### 1d. OpenFPGALoader (flashing — skip if you only want to build)
 
@@ -127,6 +140,7 @@ If not available in apt, build from source: <https://github.com/trabucayre/openF
 ### 2 — Clone & setup
 
 ```bash
+# Clone the repo, or download/extract the GitHub ZIP first.
 git clone https://github.com/HaiPhan285/FPGA_Compiler-.git
 cd FPGA_Compiler-
 chmod +x setup.sh
@@ -137,10 +151,9 @@ chmod +x setup.sh
 
 1. Installs any missing system packages
 2. Installs **yosys** (synthesis), **nextpnr-xilinx** (place-and-route via snap), **openFPGALoader** (flash)
-3. Clones **prjxray** and builds its C++ tools (`xc7frames2bit`, `bitread`, …)
-4. Clones the **prjxray-db** Artix-7 tile database
-5. Creates a Python virtual environment (`.tools/env`) and installs Python deps
-6. Sets up the **chipdb** for nextpnr-xilinx (bundled in snap package)
+3. Reuses the **openXC7** bundled bitstream tools and database when available
+4. Falls back to cloning/building **prjxray** and **prjxray-db** only if the bundle is unavailable
+5. Sets up the **chipdb** for nextpnr-xilinx, generating it automatically if needed
 
 Setup takes ~5 minutes on a good connection. Run it only once.
 
@@ -254,6 +267,8 @@ openFPGALoader --detect
   set_property -dict {PACKAGE_PIN J15 IOSTANDARD LVCMOS33} [get_ports {a}]
   ```
 
+  `build.sh` now auto-sanitizes the common `{ a } -> {a}` mistake in the copied build XDC, but you should still write the source file correctly.
+
 - Every port needs both `PACKAGE_PIN` and `IOSTANDARD`.
 - Don't use Verilog reserved words as module names (`xor`, `and`, `or`, …). Use `xor_gate`, `and_gate`, etc.
 
@@ -272,25 +287,29 @@ openFPGALoader --detect
 
 | Error | Cause | Fix |
 |-------|-------|-----|
-| `fasm2frames not found` | prjxray not set up | Re-run `./setup.sh` |
-| `xc7frames2bit not found` | prjxray C++ tools not built | `cd .tools/prjxray && cmake --build build` |
-| `nextpnr-xilinx: command not found` | Tool not installed correctly | Run: `wget -qO - https://raw.githubusercontent.com/openXC7/toolchain-installer/main/toolchain-installer.sh \| bash` |
-| `Unable to read chipdb` | chipdb missing | Should be bundled in snap; try reinstalling: `sudo snap install --classic --dangerous $(ls openxc7_*.snap)` |
-| `Assertion failure: str.back() == '}'` | Spaces inside XDC braces | Change `{ a }` → `{a}` |
+| `fasm2frames not found` | Bitstream tools not available | Re-run `./setup.sh` |
+| `xc7frames2bit not found` | Bitstream tools not available | Re-run `./setup.sh` |
+| `nextpnr-xilinx: command not found` | openXC7 not installed or not detected | Run `./setup.sh` |
+| `Chipdb file not found` | chipdb missing | Re-run `./setup.sh`; it now generates the chipdb automatically when needed |
+| `openxc7 is already installed. Please remove it first` | You re-ran the external installer even though openXC7 was already present | Do not rerun the installer. Run `./setup.sh` or generate the chipdb once using the commands above |
+| `snap-confine is packaged without necessary permissions` | The snap wrapper failed | Use `./build.sh`; it now prefers the direct openXC7 binaries instead of the snap wrapper |
+| `Assertion failure: str.back() == '}'` | XDC has unsupported brace spacing such as `{ clk }` or `{ PACKAGE_PIN ... }` | Change `{ clk }` → `{clk}` and `{ PACKAGE_PIN ... }` → `{PACKAGE_PIN ...}` |
+| `ImportError: libffi.so.7` during `fasm2frames` | openXC7 falls back to the slower pure-Python parser | Usually safe to ignore if the build continues and the `.bit` file is generated |
 | `Module 'xor' not found` | Reserved word used as module name | Rename module to `xor_gate` |
 | `All .sv/.v files are empty` | Source file has no `module` declaration | Add your design code |
 | `port has no IOSTANDARD` | Missing I/O standard in constraints | Add `IOSTANDARD LVCMOS33` for each port |
 | `unable to open ftdi device` | USB not connected or permissions issue | Check `lsusb`; run `sudo openFPGALoader --detect`; or use `usbipd attach` on WSL |
-| Build fails silently | General error | Check `build/yosys.log` and `build/nextpnr.log` in your project's `build/` folder (created on failure) |
+| Build fails silently | General error | Read the temp directory path printed by `build.sh` on failure and inspect `yosys.log` / `nextpnr.log` there |
 
 ### Check all tools are installed
 
 ```bash
 yosys --version
-nextpnr-xilinx --version
+ls /snap/openxc7/current/usr/bin/nextpnr-xilinx
+ls /snap/openxc7/current/bin/fasm2frames
+ls /snap/openxc7/current/usr/bin/xc7frames2bit
+ls ~/.local/share/nextpnr/xilinx/chipdb-xc7a100t.bin
 openFPGALoader --version
-ls ~/.local/share/nextpnr/xilinx/chipdb-xc7a100t.bin 2>/dev/null || echo "chipdb handled by snap"
-ls .tools/prjxray/build/tools/xc7frames2bit
 ```
 
 ---
@@ -306,9 +325,9 @@ your_design.sv
       ▼  nextpnr-xilinx --chipdb chipdb-xc7a100t.bin
   design.fasm        (placed-and-routed FASM)
       │
-      ▼  fasm2frames (Python, prjxray)
+      ▼  fasm2frames
   design.frames      (binary frame data)
       │
-      ▼  xc7frames2bit (C++, prjxray)
+      ▼  xc7frames2bit
   design.bit         ← flash this to the board
 ```

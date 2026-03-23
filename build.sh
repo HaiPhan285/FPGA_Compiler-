@@ -11,7 +11,7 @@ if [ -f "$PRJXRAY_ENV" ]; then
     source "$PRJXRAY_ENV"
 else
     echo "Error: prjxray environment not found at $PRJXRAY_ENV"
-    echo "Please run setup first: ./setup-prjxray.sh"
+    echo "Please run setup first: ./setup.sh"
     exit 1
 fi
 
@@ -25,12 +25,23 @@ SV_FILE=""
 BUILD_ALL=false
 FLASH_MODE=false
 
+project_has_build_inputs() {
+    local project_dir="$1"
+    find "${project_dir}" -maxdepth 2 -type f \( -name "*.sv" -o -name "*.v" \) -size +0c | grep -q . &&
+    find "${project_dir}" -maxdepth 2 -type f -name "*.xdc" -size +0c | grep -q .
+}
+
 # If no arguments given, show interactive project selection menu
 if [[ $# -eq 0 ]]; then
     APP_DIR="${BUILD_SCRIPT_DIR}/app"
-    mapfile -t PROJECTS < <(find "$APP_DIR" -mindepth 1 -maxdepth 1 -type d | sort)
+    PROJECTS=()
+    while IFS= read -r project_dir; do
+        if project_has_build_inputs "${project_dir}"; then
+            PROJECTS+=("${project_dir}")
+        fi
+    done < <(find "$APP_DIR" -mindepth 1 -maxdepth 1 -type d | sort)
     if [ ${#PROJECTS[@]} -eq 0 ]; then
-        echo "No projects found in app/"
+        echo "No buildable projects found in app/"
         exit 1
     fi
 
@@ -169,6 +180,31 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
+run_tool_binary() {
+    local tool_bin="$1"
+    shift
+
+    if [ -n "${OPENXC7_LD_LIBRARY_PATH:-}" ] && [[ "${tool_bin}" == /snap/openxc7/* ]]; then
+        env LD_LIBRARY_PATH="${OPENXC7_LD_LIBRARY_PATH}" "${tool_bin}" "$@"
+    else
+        "${tool_bin}" "$@"
+    fi
+}
+
+sanitize_xdc_file() {
+    local xdc_file="$1"
+    local sanitized_file="${xdc_file}.sanitized"
+
+    perl -0pe 's/\{\s+([^{}]*?)\s+\}/{\1}/g' "${xdc_file}" > "${sanitized_file}"
+
+    if ! cmp -s "${xdc_file}" "${sanitized_file}"; then
+        mv "${sanitized_file}" "${xdc_file}"
+        echo "  Sanitized XDC brace spacing for nextpnr compatibility"
+    else
+        rm -f "${sanitized_file}"
+    fi
+}
+
 # Parse arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -264,6 +300,11 @@ if [ "$BUILD_ALL" = true ]; then
     FAILED=()
     for proj_dir in "$APP_DIR"/*/; do
         proj_name=$(basename "$proj_dir")
+        if ! project_has_build_inputs "$proj_dir"; then
+            echo -e "${YELLOW}=== Skipping ${proj_name}: not a buildable project directory ===${NC}"
+            echo ""
+            continue
+        fi
         echo -e "${GREEN}=== Project: ${proj_name} ===${NC}"
 
         # Pick source file
@@ -400,22 +441,33 @@ fi
 echo "✓ yosys found"
 
 # Check for nextpnr-xilinx
-if ! command -v nextpnr-xilinx &> /dev/null; then
+NEXTPNR_XILINX_BIN=""
+if [ -n "${OPENXC7_SNAP_ROOT:-}" ] && [ -x "${OPENXC7_SNAP_ROOT}/usr/bin/nextpnr-xilinx" ]; then
+    # Use the binary inside the snap directly to avoid snap-confine runtime issues.
+    NEXTPNR_XILINX_BIN="${OPENXC7_SNAP_ROOT}/usr/bin/nextpnr-xilinx"
+else
+    NEXTPNR_XILINX_BIN="$(command -v nextpnr-xilinx 2>/dev/null || true)"
+    if [ -z "${NEXTPNR_XILINX_BIN}" ] && [ -x "/snap/bin/nextpnr-xilinx" ]; then
+        export PATH="/snap/bin:${PATH}"
+        NEXTPNR_XILINX_BIN="/snap/bin/nextpnr-xilinx"
+    fi
+fi
+if [ -z "${NEXTPNR_XILINX_BIN}" ]; then
     echo -e "${RED}Error: nextpnr-xilinx not found. Please install nextpnr-xilinx.${NC}"
     exit 1
 fi
-echo "✓ nextpnr-xilinx found"
+echo "✓ nextpnr-xilinx found at ${NEXTPNR_XILINX_BIN}"
 
 # Check for prjxray tools
 if [ ! -f "${XRAY_FASM2FRAMES}" ]; then
     echo -e "${RED}Error: fasm2frames not found. Please check prjxray setup.${NC}"
     exit 1
 fi
-if [ ! -f "${XRAY_TOOLS_DIR}/xc7frames2bit" ]; then
+if [ ! -x "${XRAY_XC7FRAMES2BIT}" ]; then
     echo -e "${RED}Error: xc7frames2bit not found. Please build prjxray tools.${NC}"
     exit 1
 fi
-echo "✓ prjxray tools found"
+echo "✓ bitstream tools found (${XRAY_SETUP_SOURCE})"
 
 # Clean and create build directory
 echo -e "${YELLOW}Cleaning previous build...${NC}"
@@ -431,13 +483,20 @@ if [ -f "$SELECTED_SRC" ]; then
     cp "$SELECTED_SRC" "$BUILD_DIR/"
     echo "  Copied: $(basename "$SELECTED_SRC")"
 fi
-# Copy all .v files (dependencies like picorv32.v)
-for vfile in "$SOURCE_DIR"/*.v; do
-    VFILE_BASENAME=$(basename "$vfile")
-    VFILE_NAME="${VFILE_BASENAME%.*}"
-    if [ -f "$vfile" ] && [ "$VFILE_BASENAME" != "$SELECTED_BASENAME" ] && [ "$VFILE_NAME" != "$SELECTED_NAME" ]; then
-        cp "$vfile" "$BUILD_DIR/"
-        echo "  Copied: $VFILE_BASENAME"
+# Copy all non-testbench HDL dependencies
+for srcfile in "$SOURCE_DIR"/*.sv "$SOURCE_DIR"/*.v; do
+    SRCFILE_BASENAME=$(basename "$srcfile")
+    SRCFILE_NAME="${SRCFILE_BASENAME%.*}"
+
+    case "${SRCFILE_BASENAME}" in
+        tb_*|*_tb.sv|*_tb.v|sim.sv|sim.v)
+            continue
+            ;;
+    esac
+
+    if [ -f "$srcfile" ] && [ "$SRCFILE_BASENAME" != "$SELECTED_BASENAME" ] && [ "$SRCFILE_NAME" != "$SELECTED_NAME" ]; then
+        cp "$srcfile" "$BUILD_DIR/"
+        echo "  Copied: $SRCFILE_BASENAME"
     fi
 done
 
@@ -453,7 +512,11 @@ fi
 
 # Copy constraint file to build directory
 if [ -n "$CONSTRAINTS" ] && [ -f "$CONSTRAINTS" ]; then
-    cp "$CONSTRAINTS" "$BUILD_DIR/"
+    CONSTRAINTS_BASENAME=$(basename "$CONSTRAINTS")
+    BUILD_CONSTRAINTS="${BUILD_DIR}/${CONSTRAINTS_BASENAME}"
+    cp "$CONSTRAINTS" "${BUILD_CONSTRAINTS}"
+    sanitize_xdc_file "${BUILD_CONSTRAINTS}"
+    CONSTRAINTS="${BUILD_CONSTRAINTS}"
     echo "  Copied: $(basename "$CONSTRAINTS")"
 fi
 
@@ -492,11 +555,15 @@ echo ""
 
 echo -e "${YELLOW}Step 1: Synthesis with Yosys${NC}"
 
-# Build yosys command to read selected source file and any .v dependencies
+# Build yosys command to read selected source file and any HDL dependencies
 SELECTED_BASENAME=$(basename "$SELECTED_SRC")
 SELECTED_NAME="${SELECTED_BASENAME%.*}"
+SV_FILES=$(ls -1 *.sv 2>/dev/null | grep -v -E '^(tb_.*|.*_tb\.sv|sim\.sv)$' | grep -v "^${SELECTED_BASENAME}$" | grep -v "^${SELECTED_NAME}.sv$" | tr '\n' ' ')
 V_FILES=$(ls -1 *.v 2>/dev/null | grep -v -E '^(tb_.*|.*_tb\.v|sim\.v)$' | grep -v "^${SELECTED_BASENAME}$" | grep -v "^${SELECTED_NAME}.v$" | tr '\n' ' ')
 YOSYS_CMD="read_verilog -sv ${SELECTED_BASENAME}"
+if [ -n "$SV_FILES" ]; then
+    YOSYS_CMD="${YOSYS_CMD}; read_verilog -sv ${SV_FILES}"
+fi
 if [ -n "$V_FILES" ]; then
     YOSYS_CMD="${YOSYS_CMD}; read_verilog ${V_FILES}"
 fi
@@ -536,9 +603,48 @@ for path in "${CHIPDB_PATHS[@]}"; do
 done
 
 if [ -z "$CHIPDB_FOUND" ]; then
+    OPENXC7_SNAP_ROOT=""
+    for snap_root in "/snap/openxc7/current" "/snap/openxc7/x1"; do
+        if [ -f "${snap_root}/opt/nextpnr-xilinx/python/bbaexport.py" ] && \
+           [ -x "${snap_root}/usr/bin/bbasm" ]; then
+            OPENXC7_SNAP_ROOT="${snap_root}"
+            break
+        fi
+    done
+
+    if [ -n "${OPENXC7_SNAP_ROOT}" ]; then
+        CHIPDB_CACHE_DIR="${HOME}/.local/share/nextpnr/xilinx"
+        CHIPDB_GENERATED="${CHIPDB_CACHE_DIR}/chipdb-xc7a100t.bin"
+        CHIPDB_BBA="${BUILD_DIR}/chipdb-xc7a100t.bba"
+
+        mkdir -p "${CHIPDB_CACHE_DIR}"
+
+        if [ ! -f "${CHIPDB_GENERATED}" ]; then
+            echo "Chipdb file not found. Generating it from the installed openXC7 snap..."
+            echo "This can take a few minutes and only needs to be done once."
+
+            python3 "${OPENXC7_SNAP_ROOT}/opt/nextpnr-xilinx/python/bbaexport.py" \
+                --device "${PART}" \
+                --bba "${CHIPDB_BBA}"
+
+            "${OPENXC7_SNAP_ROOT}/usr/bin/bbasm" -l "${CHIPDB_BBA}" "${CHIPDB_GENERATED}"
+            rm -f "${CHIPDB_BBA}"
+        fi
+
+        if [ -f "${CHIPDB_GENERATED}" ]; then
+            CHIPDB_FOUND="${CHIPDB_GENERATED}"
+        fi
+    fi
+fi
+
+if [ -z "$CHIPDB_FOUND" ]; then
     echo -e "${RED}Chipdb file not found. The chipdb should be bundled with the openXC7 snap package.${NC}"
-    echo -e "${YELLOW}Please install the toolchain first:${NC}"
-    echo "  wget -qO - https://raw.githubusercontent.com/openXC7/toolchain-installer/main/toolchain-installer.sh | bash"
+    echo -e "${YELLOW}If openXC7 is already installed, generate it once with:${NC}"
+    echo "  mkdir -p ~/.local/share/nextpnr/xilinx"
+    echo "  python3 /snap/openxc7/current/opt/nextpnr-xilinx/python/bbaexport.py \\"
+    echo "    --device ${PART} --bba /tmp/chipdb-xc7a100t.bba"
+    echo "  /snap/openxc7/current/usr/bin/bbasm -l /tmp/chipdb-xc7a100t.bba \\"
+    echo "    ~/.local/share/nextpnr/xilinx/chipdb-xc7a100t.bin"
     echo ""
     echo "Or if you have nextpnr-xilinx installed, please ensure the chipdb is available."
     exit 1
@@ -547,7 +653,7 @@ fi
 echo "Using chipdb: ${CHIPDB_FOUND}"
 echo ""
 
-nextpnr-xilinx \
+run_tool_binary "${NEXTPNR_XILINX_BIN}" \
     --chipdb "${CHIPDB_FOUND}" \
     --json "${BUILD_DIR}/${PROJECT}.json" \
     --xdc "${CONSTRAINTS}" \
@@ -555,17 +661,24 @@ nextpnr-xilinx \
     --verbose 2>&1 | tee ${BUILD_DIR}/nextpnr.log
 
 if [ ! -f "${BUILD_DIR}/${PROJECT}.fasm" ]; then
+    if grep -q "Assertion failure: str.back() == '}'" "${BUILD_DIR}/nextpnr.log" 2>/dev/null; then
+        echo -e "${YELLOW}Hint:${NC} nextpnr-xilinx rejected the XDC syntax. Remove spaces directly inside braces, e.g. use {clk} instead of { clk }."
+    fi
     echo -e "${RED}Error: Place and route failed. Check nextpnr.log for details.${NC}"
     exit 1
 fi
 
 echo ""
 echo -e "${YELLOW}Step 3: Generate FASM to Frames${NC}"
-python3 ${XRAY_FASM2FRAMES} --db-root ${XRAY_DATABASE_DIR}/${XRAY_DATABASE} --part ${PART} "${BUILD_DIR}/${PROJECT}.fasm" "${BUILD_DIR}/${PROJECT}.frames"
+if [ "${XRAY_FASM2FRAMES_MODE}" = "exec" ]; then
+    run_tool_binary "${XRAY_FASM2FRAMES}" --db-root "${XRAY_DATABASE_DIR}/${XRAY_DATABASE}" --part "${PART}" "${BUILD_DIR}/${PROJECT}.fasm" "${BUILD_DIR}/${PROJECT}.frames"
+else
+    python3 "${XRAY_FASM2FRAMES}" --db-root "${XRAY_DATABASE_DIR}/${XRAY_DATABASE}" --part "${PART}" "${BUILD_DIR}/${PROJECT}.fasm" "${BUILD_DIR}/${PROJECT}.frames"
+fi
 
 echo ""
 echo -e "${YELLOW}Step 4: Generate Bitstream${NC}"
-${XRAY_TOOLS_DIR}/xc7frames2bit \
+run_tool_binary "${XRAY_XC7FRAMES2BIT}" \
     --part_file "${XRAY_PART_YAML}" \
     --part_name "${PART}" \
     --frm_file "${BUILD_DIR}/${PROJECT}.frames" \

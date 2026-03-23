@@ -153,12 +153,17 @@ yosys --version
 
 NextPNR performs placement and routing on the FPGA fabric.
 
+For this repository, prefer `./setup.sh`. It already installs openXC7 and the build now uses the direct binaries inside the installed bundle.
+
 ### Step 4.1: Install Pre-built NextPNR
 
 ```bash
-sudo apt-get install -y nextpnr-xilinx
-nextpnr-xilinx --help | head -5
-# Should show NextPNR version
+sudo apt-get install -y snapd
+wget -qO - https://raw.githubusercontent.com/openXC7/toolchain-installer/main/toolchain-installer.sh | bash
+sudo snap alias openxc7.nextpnr-xilinx nextpnr-xilinx
+
+LD_LIBRARY_PATH=/snap/openxc7/current/usr/lib/x86_64-linux-gnu:/snap/openxc7/current/lib/x86_64-linux-gnu:/snap/openxc7/current/usr/lib:/snap/openxc7/current/lib \
+    /snap/openxc7/current/usr/bin/nextpnr-xilinx --help | head -5
 ```
 
 **If not found in repos:**
@@ -188,21 +193,16 @@ nextpnr-xilinx --help | head -5
 NextPNR needs device-specific data files (~50MB per device):
 
 ```bash
-# Create directories
 mkdir -p ~/.local/share/nextpnr/xilinx
 
-# Download chipdb for XC7A100T (Nexys A7-100T)
-cd ~/.local/share/nextpnr/xilinx
+python3 /snap/openxc7/current/opt/nextpnr-xilinx/python/bbaexport.py \
+    --device xc7a100tcsg324-1 \
+    --bba /tmp/chipdb-xc7a100t.bba
 
-wget https://github.com/YosysHQ/nextpnr-xilinx/releases/download/v0.3/chipdb-xc7a100t.bin
+/snap/openxc7/current/usr/bin/bbasm -l /tmp/chipdb-xc7a100t.bba \
+    ~/.local/share/nextpnr/xilinx/chipdb-xc7a100t.bin
 
-# Verify download
-ls -lh chipdb-xc7a100t.bin
-# Should show ~30-50MB file
-
-# If you need other devices:
-# For XC7A35T:  wget https://github.com/YosysHQ/nextpnr-xilinx/releases/download/v0.3/chipdb-xc7a35t.bin
-# For XC7A200T: wget https://github.com/YosysHQ/nextpnr-xilinx/releases/download/v0.3/chipdb-xc7a200t.bin
+ls -lh ~/.local/share/nextpnr/xilinx/chipdb-xc7a100t.bin
 ```
 
 ---
@@ -210,6 +210,8 @@ ls -lh chipdb-xc7a100t.bin
 ## Part 5: Install PRJXRAY (Bitstream Database)
 
 PRJXRAY provides the bitstream generation tools and Xilinx 7-series device databases.
+
+For normal use in this repository, you do not need to clone `prjxray` or `prjxray-db` manually. The installed openXC7 bundle already contains `fasm2frames`, `xc7frames2bit`, and a matching `prjxray-db`, and `./setup.sh` uses those first.
 
 ### Step 5.1: Check if PRJXRAY Already Exists
 
@@ -223,19 +225,12 @@ ls -la ~/FPGA_Compiler-/.tools/
 ### Step 5.2: Install PRJXRAY (If not present)
 
 ```bash
-cd ~/FPGA_Compiler-/.tools/
+# Prefer the openXC7 bundle
+ls /snap/openxc7/current/bin/fasm2frames
+ls /snap/openxc7/current/usr/bin/xc7frames2bit
+ls /snap/openxc7/current/opt/nextpnr-xilinx/external/prjxray-db/artix7/xc7a100tcsg324-1/part.yaml
 
-# Clone PRJXRAY tools
-git clone https://github.com/Project-X-Ray/prjxray.git
-cd prjxray
-pip3 install -e .  # Install in development mode
-
-# Clone PRJXRAY database
-cd ..
-git clone https://github.com/Project-X-Ray/prjxray-db.git
-
-# Verify
-ls -la ~/.local/lib/python3.*/dist-packages/ | grep xray
+# Only fall back to .tools/prjxray if you are intentionally not using openXC7.
 ```
 
 ### Step 5.3: Set Environment Variables
