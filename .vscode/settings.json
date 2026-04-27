@@ -6,5 +6,6 @@
         "*.vh": "systemverilog"
     },
     "verilog.linting.linter": "none",
-    "terminal.integrated.defaultProfile.linux": "bash"
+    "terminal.integrated.defaultProfile.linux": "bash",
+    "fpgaExtension.designFile": "/home/billp/FPGA_Compiler-/app/project10/top.v"
 }

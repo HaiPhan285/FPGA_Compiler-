@@ -6,11 +6,13 @@
 ## =========================================================
 
 ## 100 MHz on-board oscillator
-set_property -dict {PACKAGE_PIN E3 IOSTANDARD LVCMOS33} [get_ports {clk}]
-create_clock -add -name sys_clk -period 10.000 -waveform {0 5} [get_ports {clk}]
+set_property PACKAGE_PIN E3 [get_ports clk]
+set_property IOSTANDARD LVCMOS33 [get_ports clk]
 
 ## Pushbutton: BTNC (use as active-high reset)
-set_property -dict {PACKAGE_PIN N17 IOSTANDARD LVCMOS33} [get_ports {rst}]
+set_property PACKAGE_PIN N17 [get_ports rst]
+set_property IOSTANDARD LVCMOS33 [get_ports rst]
 
 ## LED0
-set_property -dict {PACKAGE_PIN H17 IOSTANDARD LVCMOS33} [get_ports {led}]
+set_property PACKAGE_PIN H17 [get_ports led]
+set_property IOSTANDARD LVCMOS33 [get_ports led]

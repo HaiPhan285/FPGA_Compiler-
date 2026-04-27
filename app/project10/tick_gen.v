@@ -1,26 +1,27 @@
+`timescale 1ns / 1ps
 
-module tick_gen #(parameter wd = 100000000)
-(   
-    input logic clk,
-    input logic rst,
-    output logic  tick
+module tick_gen #(parameter DIVISOR = 100_000_000) (
+    input clk,
+    input  rst,
+    output reg tick
 );
 
     reg [26:0] count;
 
     always @(posedge clk) begin
-        if(rst) begin
+        if (rst) begin
             count <= 0;
             tick <= 0;
         end
         else begin
-            if(count == DIVISOR-1) begin
+            if (count == (DIVISOR-1)) begin
                 count <= 0;
                 tick <= 1;
             end
             else begin
-                cout <= cout + 1;
+                count <= count + 1;
                 tick <= 0;
             end
         end
     end
+endmodule

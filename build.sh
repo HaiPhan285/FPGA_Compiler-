@@ -287,10 +287,10 @@ src_path, dst_path = sys.argv[1:3]
 brace_space_re = re.compile(r'\{\s+([^{}]*?)\s+\}')
 set_property_dict_re = re.compile(
     r'^(?P<indent>\s*)set_property\s+-dict\s+\{(?P<dict>[^}]*)\}\s+'
-    r'(?P<target>\[(?:get_ports|get_nets)\s+(?:\{[^}]+\}|\S+)\])\s*;?\s*$'
+    r'(?P<target>\[(?:get_ports|get_nets)\s+(?:\{[^}]+\}|[^\s\[\]]+)\])\s*;?\s*$'
 )
 create_clock_re = re.compile(
-    r'^(?P<indent>\s*)create_clock\b(?P<body>.*?)(?P<target>\[(?:get_ports|get_nets)\s+(?:\{[^}]+\}|\S+)\])\s*;?\s*$'
+    r'^(?P<indent>\s*)create_clock\b(?P<body>.*?)(?P<target>\[(?:get_ports|get_nets)\s+(?:\{[^}]+\}|[^\s\[\]]+)\])\s*;?\s*$'
 )
 period_re = re.compile(r'-period\s+([0-9]+(?:\.[0-9]+)?)')
 
@@ -375,7 +375,7 @@ import sys
 json_file, original_top, xdc_file, wrapper_file, wrapper_xdc = sys.argv[1:6]
 
 wrapper_top = "__nextpnr_top_wrapper"
-bit_target_re = re.compile(r'get_ports\s+(?P<braced>\{(?P<inner>[^}]+)\}|(?P<plain>\S+))')
+bit_target_re = re.compile(r'get_ports\s+(?P<braced>\{(?P<inner>[^}]+)\}|(?P<plain>[^\s\[\]]+))')
 bit_name_re = re.compile(r'^(?P<base>[A-Za-z_][A-Za-z0-9_]*)\[(?P<idx>\d+)\]$')
 
 with open(json_file, "r", encoding="utf-8") as fh:
@@ -458,7 +458,7 @@ with open(xdc_file, "r", encoding="utf-8") as src, open(wrapper_xdc, "w", encodi
             bit_match = bit_name_re.match(target)
             if not bit_match:
                 return match.group(0)
-            return f"get_ports {{{bit_match.group('base')}__{bit_match.group('idx')}}}"
+            return f"get_ports {bit_match.group('base')}__{bit_match.group('idx')}"
 
         dst.write(bit_target_re.sub(repl, raw_line))
 
@@ -493,7 +493,7 @@ for name, info in module.get("ports", {}).items():
 
 port_props = {}
 unknown_targets = set()
-line_re = re.compile(r'get_ports\s+(?:\{([^}]+)\}|(\S+))')
+line_re = re.compile(r'get_ports\s+(?:\{([^}]+)\}|([^\s\[\]]+))')
 bit_re = re.compile(r'^(?P<base>[A-Za-z_][A-Za-z0-9_]*)\[(?P<idx>\d+|\*)\]$')
 
 def ensure_port_entry(name):
@@ -527,15 +527,17 @@ with open(xdc_file, "r", encoding="utf-8") as fh:
         if bit_match:
             port_name = bit_match.group("base")
             bit_idx = bit_match.group("idx")
+            wrapper_port = f"{port_name}__{bit_idx}"
         else:
             port_name = target
             bit_idx = "*"
+            wrapper_port = port_name
 
-        if port_name not in ports:
+        if wrapper_port not in ports:
             unknown_targets.add(target)
             continue
 
-        entry = ensure_port_entry(port_name)
+        entry = ensure_port_entry(wrapper_port)
         if bit_idx == "*":
             entry["all"].update(props)
         else:
