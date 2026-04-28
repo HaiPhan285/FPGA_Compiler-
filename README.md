@@ -33,13 +33,13 @@ chmod +x setup.sh build.sh doctor.sh
 
 What those commands do:
 
-1. `setup.sh` installs or reuses the required Linux FPGA tools.
+1. `setup.sh` installs or reuses the full required Linux FPGA toolchain for this repo (you should not need manual tool installation).
 2. `doctor.sh --smoke` checks the environment and runs one small Verilog build plus one small SystemVerilog build.
 3. `build.sh` shows a project menu and builds the selected project.
 
 If setup succeeds, you should not need to manually clone `prjxray` or `prjxray-db`.
 
-For the full manual setup flow, see [SETUP.md](/home/HaiPhan27/FPGA_Compiler-/SETUP.md).
+For archived manual setup notes, see [SETUP.md](./SETUP.md) (deprecated).
 
 ## Requirements
 
