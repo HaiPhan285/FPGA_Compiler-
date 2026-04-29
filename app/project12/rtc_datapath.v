@@ -6,6 +6,7 @@ module rtc_datapath(
     input tick_enable,
     input [2:0] state,
     input inc_pulse,
+    input dec_pulse,
 
     output reg [5:0] second,
     output reg [5:0] minute,
@@ -55,14 +56,26 @@ always @(posedge clk) begin
 
         //Manual editing of time 
         else begin
-            if (state == SET_HOUR && inc_pulse) begin
-                if (hour == 5'd23) hour <= 5'd0;
-                else hour <= hour + 5'd1;
+            if (state == SET_HOUR) begin
+                if (inc_pulse) begin
+                    if (hour == 5'd23) hour <= 5'd0;
+                    else hour <= hour + 5'd1;
+                end
+                else if (dec_pulse) begin
+                    if (hour == 5'd0) hour <= 5'd23;
+                    else hour <= hour - 5'd1;
+                end
             end
 
-            else if (state == SET_MIN && inc_pulse) begin
-                if (minute == 6'd59) minute <= 6'd0;
-                else minute <= minute + 6'd1;
+            else if (state == SET_MIN) begin
+                if (inc_pulse) begin
+                    if (minute == 6'd59) minute <= 6'd0;
+                    else minute <= minute + 6'd1;
+                end
+                else if (dec_pulse) begin
+                    if (minute == 6'd0) minute <= 6'd59;
+                    else minute <= minute - 6'd1;
+                end
             end
         end
     end
@@ -115,7 +128,7 @@ always @(*) begin
         if (day == max_day(month, year)) begin
             day_n = 6'd1;
             if (month == 4'd12) begin
-                month_n = 6'd1;
+                month_n = 4'd1;
                 year_n = year + 16'd1;
             end
             else    
@@ -127,21 +140,36 @@ always @(*) begin
 
     //Manual edit
     else begin
-        if (state == SET_DAY && inc_pulse) begin
-            if (day == max_day(month, year)) day_n = 6'd1;
-            else day_n = day + 6'd1;
+        if (state == SET_DAY) begin
+            if (inc_pulse) begin
+                if (day == max_day(month, year)) day_n = 6'd1;
+                else day_n = day + 6'd1;
+            end
+            else if (dec_pulse) begin
+                if (day == 6'd1) day_n = max_day(month, year);
+                else day_n = day - 6'd1;
+            end
         end
 
-        else if (state == SET_MONTH && inc_pulse) begin
-            if (month == 4'd12) month_n = 4'd1;
-            else month_n = month + 4'd1;
-
+        else if (state == SET_MONTH) begin
+            if (inc_pulse) begin
+                if (month == 4'd12) month_n = 4'd1;
+                else month_n = month + 4'd1;
+            end
+            else if (dec_pulse) begin
+                if (month == 4'd1) month_n = 4'd12;
+                else month_n = month - 4'd1;
+            end
             if (day_n > max_day(month_n, year_n)) 
                 day_n = max_day(month_n, year_n);
         end
 
-        else if (state == SET_YEAR && inc_pulse) begin
-            year_n = year + 16'd1;
+        else if (state == SET_YEAR) begin
+            if (inc_pulse) year_n = year + 16'd1;
+            else if (dec_pulse) begin
+                if (year > 16'd0) year_n = year - 16'd1;
+                else year_n = 16'd0;
+            end
 
             if (day_n > max_day(month_n, year_n))
                 day_n = max_day(month_n, year_n);

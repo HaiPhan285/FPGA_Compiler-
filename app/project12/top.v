@@ -1,23 +1,27 @@
 `timescale 1ns/1ps
 
-module top #(parameter DIVISOR = 100_000_000) 
+module top #(
+    parameter DIVISOR = 100_000_000,
+    parameter DEBOUNCE_CYCLES = 2_000_000
+)
 (
-    input        CLK100MHZ,
-    input        CPU_RESETN,
-    input [1:0]   SW,
-    input         BTNC,  //inc btn
-    input         BTNL,  //mode btn
-    input         BTNR,  //next btn
-    
-    output [6:0] SEG,
-    output      DP,
-    output [7:0] AN
+    input         CLK100MHZ,
+    input         CPU_RESETN,
+    input  [1:0]  SW,
+    input         BTNC,
+    input         BTNL,
+    input         BTNR,
+    input         BTND,
+    output [6:0]  SEG,
+    output        DP,
+    output [7:0]  AN
 );
+
 wire rst = ~CPU_RESETN;
-wire mode_pulse, inc_pulse, next_pulse;
+wire mode_pulse, inc_pulse, next_pulse, dec_pulse;
 
 sync_deb_edge #(
-    .DEBOUNCE_CYCLES(2_000_000)
+    .DEBOUNCE_CYCLES(DEBOUNCE_CYCLES)
 ) u_mode(
     .clk(CLK100MHZ),
     .reset(rst),
@@ -26,7 +30,7 @@ sync_deb_edge #(
 );
 
 sync_deb_edge #(
-    .DEBOUNCE_CYCLES(2_000_000)
+    .DEBOUNCE_CYCLES(DEBOUNCE_CYCLES)
 ) u_inc(
     .clk(CLK100MHZ),
     .reset(rst),
@@ -35,13 +39,22 @@ sync_deb_edge #(
 );
 
 sync_deb_edge #(
-    .DEBOUNCE_CYCLES(2_000_000)
+    .DEBOUNCE_CYCLES(DEBOUNCE_CYCLES)
 ) u_next(
     .clk(CLK100MHZ),
     .reset(rst),
     .async_in(BTNR),
     .pulse_out(next_pulse)
 );
+
+sync_deb_edge #(
+    .DEBOUNCE_CYCLES(DEBOUNCE_CYCLES)
+) u_dec(
+    .clk(CLK100MHZ),
+    .reset(rst),
+    .async_in(BTND),
+    .pulse_out(dec_pulse)
+); 
 
 wire tick_1hz;
 tick_divider #(
@@ -84,6 +97,7 @@ rtc_datapath u_data(
     .tick_enable(tick_enable),
     .state(state),
     .inc_pulse(inc_pulse),
+    .dec_pulse(dec_pulse),
     .second(second),
     .minute(minute),
     .hour(hour),
